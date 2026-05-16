@@ -6,36 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import Link from "next/link"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState("")
   const supabase = createClient()
-
-  async function handlePasswordLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    setLoading(false)
-
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-
-    window.location.href = "/dashboard"
-  }
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -44,7 +23,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
       },
     })
 
@@ -109,95 +88,52 @@ export default function LoginPage() {
             <h2 className="text-lg font-semibold text-center">Welcome back</h2>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs defaultValue="password" className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="password" className="flex-1">
-                  Password
-                </TabsTrigger>
-                <TabsTrigger value="otp" className="flex-1">
-                  Email Code
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="password" className="mt-4">
-                <form onSubmit={handlePasswordLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email-pw">Email</Label>
-                    <Input
-                      id="email-pw"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign in"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="otp" className="mt-4">
-                {!otpSent ? (
-                  <form onSubmit={handleSendOtp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email-otp">Email</Label>
-                      <Input
-                        id="email-otp"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Sending..." : "Send login code"}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleVerifyOtp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="otp">
-                        Enter the code sent to {email}
-                      </Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        placeholder="123456"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={6}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Verifying..." : "Verify code"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => setOtpSent(false)}
-                    >
-                      Use a different email
-                    </Button>
-                  </form>
-                )}
-              </TabsContent>
-            </Tabs>
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Sending..." : "Send login code"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">
+                    Enter the code sent to {email}
+                  </Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify code"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setOtpSent(false)}
+                >
+                  Use a different email
+                </Button>
+              </form>
+            )}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">

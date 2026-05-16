@@ -6,43 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import Link from "next/link"
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [fullName, setFullName] = useState("")
   const [loading, setLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState("")
   const supabase = createClient()
-
-  async function handlePasswordSignup(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    })
-
-    setLoading(false)
-
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-
-    toast.success("Account created!")
-    window.location.href = "/dashboard"
-  }
 
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault()
@@ -121,118 +94,63 @@ export default function SignupPage() {
             </h2>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs defaultValue="password" className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="password" className="flex-1">
-                  Password
-                </TabsTrigger>
-                <TabsTrigger value="otp" className="flex-1">
-                  Email Code
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="password" className="mt-4">
-                <form onSubmit={handlePasswordSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName-pw">Full name</Label>
-                    <Input
-                      id="fullName-pw"
-                      type="text"
-                      placeholder="Your name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email-pw">Email</Label>
-                    <Input
-                      id="email-pw"
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Min 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      minLength={6}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating..." : "Create account"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="otp" className="mt-4">
-                {!otpSent ? (
-                  <form onSubmit={handleSendOtp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName-otp">Full name</Label>
-                      <Input
-                        id="fullName-otp"
-                        type="text"
-                        placeholder="Your name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email-otp">Email</Label>
-                      <Input
-                        id="email-otp"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Sending..." : "Send verification code"}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleVerifyOtp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="otp">
-                        Enter the code sent to {email}
-                      </Label>
-                      <Input
-                        id="otp"
-                        type="text"
-                        placeholder="123456"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={6}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Verifying..." : "Verify code"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => setOtpSent(false)}
-                    >
-                      Use a different email
-                    </Button>
-                  </form>
-                )}
-              </TabsContent>
-            </Tabs>
+            {!otpSent ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Your name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Sending..." : "Send verification code"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">
+                    Enter the code sent to {email}
+                  </Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify code"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setOtpSent(false)}
+                >
+                  Use a different email
+                </Button>
+              </form>
+            )}
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
