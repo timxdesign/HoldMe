@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { TopBar } from "@/components/layout/top-bar"
 import { SpaceCard } from "@/features/spaces/space-card"
+import { SpaceTabs } from "@/features/spaces/space-tabs"
 import { FadeIn } from "@/components/ui/fade-in"
 import Link from "next/link"
 import { Plus, Layout, Users, Target } from "lucide-react"
@@ -20,7 +21,7 @@ export default async function SpacesPage() {
   const [{ data: spaces }, { data: strengths }] = await Promise.all([
     supabase
       .from("spaces")
-      .select("*, space_members(count), accountability_items(count)")
+      .select("*, space_members(count), accountability_items(count), owner:users!owner_id(full_name)")
       .order("updated_at", { ascending: false }),
     supabase
       .from("strengths")
@@ -41,6 +42,9 @@ export default async function SpacesPage() {
     }
   })
 
+  const mySpaces = (spaces ?? []).filter((s) => s.owner_id === user?.id)
+  const joinedSpaces = (spaces ?? []).filter((s) => s.owner_id !== user?.id)
+
   const totalMembers =
     spaces?.reduce(
       (sum, s) => sum + (s.space_members?.[0]?.count ?? 0),
@@ -59,9 +63,9 @@ export default async function SpacesPage() {
         <FadeIn>
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Your Spaces</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Manage Spaces</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage your accountability groups and track progress together.
+                Your accountability groups and the ones you&apos;ve joined.
               </p>
             </div>
             <Button asChild className="gap-2 shrink-0">
@@ -109,15 +113,58 @@ export default async function SpacesPage() {
 
         {spaces && spaces.length > 0 ? (
           <FadeIn delay={250}>
-            <div className="grid gap-3 md:grid-cols-2">
-              {spaces.map((space) => (
-                <SpaceCard
-                  key={space.id}
-                  space={space}
-                  strengthCount={strengthsBySpace.get(space.id) ?? 0}
-                />
-              ))}
-            </div>
+            <SpaceTabs
+              myCount={mySpaces.length}
+              joinedCount={joinedSpaces.length}
+              myContent={
+                mySpaces.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {mySpaces.map((space) => (
+                      <SpaceCard
+                        key={space.id}
+                        space={space}
+                        strengthCount={strengthsBySpace.get(space.id) ?? 0}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 rounded-2xl border border-dashed">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      You haven&apos;t created any spaces yet.
+                    </p>
+                    <Button asChild size="sm" className="gap-2">
+                      <Link href="/spaces/new">
+                        <Plus className="h-3.5 w-3.5" />
+                        Create a Space
+                      </Link>
+                    </Button>
+                  </div>
+                )
+              }
+              joinedContent={
+                joinedSpaces.length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {joinedSpaces.map((space) => {
+                      const ownerName = (space.owner as { full_name: string | null } | null)?.full_name ?? undefined
+                      return (
+                        <SpaceCard
+                          key={space.id}
+                          space={space}
+                          strengthCount={strengthsBySpace.get(space.id) ?? 0}
+                          ownerName={ownerName ?? undefined}
+                        />
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 rounded-2xl border border-dashed">
+                    <p className="text-sm text-muted-foreground">
+                      You haven&apos;t joined any spaces yet. Accept an invite to get started.
+                    </p>
+                  </div>
+                )
+              }
+            />
           </FadeIn>
         ) : (
           <FadeIn delay={200}>

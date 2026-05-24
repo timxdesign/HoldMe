@@ -26,9 +26,18 @@ export function useRealtimeNotifications(userId: string | undefined) {
             body: string
             type: string
           }
-          toast(notification.title, {
-            description: notification.body,
-          })
+
+          if (notification.type === "strength") {
+            toast(notification.title, {
+              description: notification.body,
+              icon: "💪",
+              duration: 5000,
+            })
+          } else {
+            toast(notification.title, {
+              description: notification.body,
+            })
+          }
         }
       )
       .subscribe()

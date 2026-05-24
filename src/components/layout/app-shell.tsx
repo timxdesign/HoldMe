@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Layout, Bell, User, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -12,8 +13,9 @@ const navItems = [
   { href: "/profile", label: "Profile", icon: User },
 ]
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, userId }: { children: React.ReactNode; userId?: string }) {
   const pathname = usePathname()
+  useRealtimeNotifications(userId)
 
   return (
     <div className="flex min-h-screen">

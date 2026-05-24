@@ -12,9 +12,10 @@ interface SpaceCardProps {
     accountability_items?: { count: number }[] | null
   }
   strengthCount?: number
+  ownerName?: string
 }
 
-export function SpaceCard({ space, strengthCount = 0 }: SpaceCardProps) {
+export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProps) {
   const memberCount = space.space_members?.[0]?.count ?? 0
   const itemCount = space.accountability_items?.[0]?.count ?? 0
 
@@ -36,6 +37,11 @@ export function SpaceCard({ space, strengthCount = 0 }: SpaceCardProps) {
                 {space.visibility === "private" ? "Private" : "Open"}
               </Badge>
             </div>
+            {ownerName && (
+              <p className="text-xs text-muted-foreground mb-1">
+                by <span className="font-medium text-foreground/70">{ownerName}</span>
+              </p>
+            )}
             {space.description && (
               <p className="text-sm text-muted-foreground truncate mb-3">
                 {space.description}

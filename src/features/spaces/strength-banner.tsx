@@ -16,6 +16,14 @@ interface StrengthBannerProps {
   strengths: StrengthItem[]
 }
 
+function formatSenderNames(strengths: StrengthItem[]): string {
+  const uniqueNames = [...new Set(strengths.map((s) => s.senderName))]
+  if (uniqueNames.length === 1) return uniqueNames[0]
+  if (uniqueNames.length === 2) return `${uniqueNames[0]} and ${uniqueNames[1]}`
+  const remaining = uniqueNames.length - 2
+  return `${uniqueNames[0]}, ${uniqueNames[1]}, and ${remaining} other${remaining > 1 ? "s" : ""}`
+}
+
 export function StrengthBanner({ strengths }: StrengthBannerProps) {
   const [dismissed, setDismissed] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -40,9 +48,7 @@ export function StrengthBanner({ strengths }: StrengthBannerProps) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">
-            {strengths.length === 1
-              ? `${latest.senderName} sent you strength`
-              : `${strengths.length} people sent you strength`}
+            {formatSenderNames(strengths)} sent you strength
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {latest.message

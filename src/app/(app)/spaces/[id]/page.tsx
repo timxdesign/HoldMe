@@ -82,6 +82,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
           items={items ?? []}
           currentUserId={user?.id ?? ""}
           spaceStrengths={strengths ?? []}
+          spaceId={id}
         />
       </section>
     </div>
