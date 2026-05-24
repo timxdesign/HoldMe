@@ -22,7 +22,12 @@ export async function POST(request: Request) {
     )
   }
 
-  const { data: space } = await supabase
+  const serviceClient = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: space } = await serviceClient
     .from("spaces")
     .select("name")
     .eq("id", spaceId)
@@ -32,30 +37,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Space not found" }, { status: 404 })
   }
 
-  const { data: existingMember } = await supabase
-    .from("space_members")
+  const { data: existingUserRecord } = await serviceClient
+    .from("users")
     .select("id")
-    .eq("space_id", spaceId)
-    .eq(
-      "user_id",
-      (
-        await supabase
-          .from("users")
-          .select("id")
-          .eq("email", email)
-          .single()
-      ).data?.id ?? ""
-    )
+    .eq("email", email)
     .maybeSingle()
 
-  if (existingMember) {
-    return NextResponse.json(
-      { error: "This person is already a member of this space" },
-      { status: 409 }
-    )
+  if (existingUserRecord) {
+    const { data: existingMember } = await serviceClient
+      .from("space_members")
+      .select("id")
+      .eq("space_id", spaceId)
+      .eq("user_id", existingUserRecord.id)
+      .maybeSingle()
+
+    if (existingMember) {
+      return NextResponse.json(
+        { error: "This person is already a member of this space" },
+        { status: 409 }
+      )
+    }
   }
 
-  const { data: invite, error: inviteError } = await supabase
+  const { data: invite, error: inviteError } = await serviceClient
     .from("invites")
     .insert({
       space_id: spaceId,
@@ -72,13 +76,8 @@ export async function POST(request: Request) {
   const origin = request.headers.get("origin") ?? ""
   const inviteLink = `${origin}/invite/${invite.token}`
 
-  const serviceClient = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
-  const { data: existingUser } = await serviceClient.auth.admin.listUsers()
-  const userExists = existingUser?.users?.some((u) => u.email === email)
+  const { data: authUsers } = await serviceClient.auth.admin.listUsers()
+  const userExists = authUsers?.users?.some((u) => u.email === email)
 
   if (!userExists) {
     await serviceClient.auth.admin.inviteUserByEmail(email, {
