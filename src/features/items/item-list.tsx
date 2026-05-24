@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Pause, Play, Heart } from "lucide-react"
+import { CheckCircle2, Pause, Play, Heart, Target } from "lucide-react"
 import { toast } from "sonner"
 
 interface Item {
@@ -21,19 +20,30 @@ interface Item {
 interface ItemListProps {
   items: Item[]
   currentUserId: string
+  spaceStrengths?: { id: string; accountability_items: unknown }[]
 }
 
-const statusBadgeVariant = {
-  active: "default",
-  in_progress: "secondary",
-  completed: "default",
-  missed: "destructive",
-  paused: "outline",
-} as const
+const statusConfig = {
+  active: { variant: "default" as const, color: "bg-green-500" },
+  in_progress: { variant: "secondary" as const, color: "bg-blue-500" },
+  completed: { variant: "default" as const, color: "bg-brand" },
+  missed: { variant: "destructive" as const, color: "bg-red-500" },
+  paused: { variant: "outline" as const, color: "bg-muted-foreground" },
+}
 
-export function ItemList({ items, currentUserId }: ItemListProps) {
+export function ItemList({ items, currentUserId, spaceStrengths = [] }: ItemListProps) {
   const [localItems, setLocalItems] = useState(items)
+  const [sendingStrength, setSendingStrength] = useState<string | null>(null)
   const supabase = createClient()
+
+  const strengthCountByItem = new Map<string, number>()
+  spaceStrengths.forEach((s) => {
+    const item = s.accountability_items as { space_id: string } | null
+    if (item) {
+      const key = s.id
+      strengthCountByItem.set(key, (strengthCountByItem.get(key) ?? 0) + 1)
+    }
+  })
 
   async function handleCheckin(itemId: string) {
     const { error } = await supabase.from("item_checkins").insert({
@@ -56,11 +66,14 @@ export function ItemList({ items, currentUserId }: ItemListProps) {
   }
 
   async function handleSendStrength(itemId: string, receiverId: string) {
+    setSendingStrength(itemId)
     const { error } = await supabase.from("strengths").insert({
       item_id: itemId,
       sender_id: currentUserId,
       receiver_id: receiverId,
     })
+
+    setSendingStrength(null)
 
     if (error) {
       toast.error("Could not send strength")
@@ -72,9 +85,14 @@ export function ItemList({ items, currentUserId }: ItemListProps) {
 
   if (localItems.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground text-center py-8">
-        No accountability items yet.
-      </p>
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="rounded-full bg-muted p-3 mb-3">
+          <Target className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          No accountability items yet. Add your first goal to get started.
+        </p>
+      </div>
     )
   }
 
@@ -82,78 +100,92 @@ export function ItemList({ items, currentUserId }: ItemListProps) {
     <div className="space-y-3">
       {localItems.map((item) => {
         const isOwn = item.user_id === currentUserId
+        const config = statusConfig[item.status as keyof typeof statusConfig] ?? statusConfig.active
+        const hasStrengths = spaceStrengths.some(
+          (s) => (s.accountability_items as { space_id: string; title: string } | null)?.title === item.title
+        )
+
         return (
-          <Card key={item.id}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1 min-w-0">
-                  <h4 className="font-medium">{item.title}</h4>
-                  {item.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {item.description}
-                    </p>
-                  )}
+          <div
+            key={item.id}
+            className="relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 space-y-3 transition-all hover:ring-brand/20"
+          >
+            {hasStrengths && isOwn && (
+              <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
+                <div className="absolute top-2 right-2">
+                  <Heart className="h-3.5 w-3.5 text-pink-500 fill-pink-500 animate-pulse" />
                 </div>
-                <Badge
-                  variant={
-                    statusBadgeVariant[
-                      item.status as keyof typeof statusBadgeVariant
-                    ] ?? "secondary"
-                  }
-                  className="shrink-0 text-[10px]"
-                >
-                  {item.status.replace("_", " ")}
-                </Badge>
               </div>
+            )}
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="outline" className="text-[10px]">
-                  {item.type}
-                </Badge>
-                <span>{item.frequency}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {isOwn ? (
-                  <>
-                    {item.status !== "completed" && (
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => handleCheckin(item.id)}
-                        className="gap-1"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Check in
-                      </Button>
-                    )}
-                    {item.status === "active" && (
-                      <Button size="sm" variant="outline" className="gap-1">
-                        <Pause className="h-3.5 w-3.5" />
-                        Pause
-                      </Button>
-                    )}
-                    {item.status === "paused" && (
-                      <Button size="sm" variant="outline" className="gap-1">
-                        <Play className="h-3.5 w-3.5" />
-                        Resume
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSendStrength(item.id, item.user_id)}
-                    className="gap-1 text-strength border-strength/30 hover:bg-strength/10"
-                  >
-                    <Heart className="h-3.5 w-3.5" />
-                    Send Strength
-                  </Button>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${config.color} shrink-0`} />
+                  <h4 className="font-semibold text-sm">{item.title}</h4>
+                </div>
+                {item.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 pl-4">
+                    {item.description}
+                  </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
+              <Badge
+                variant={config.variant}
+                className="shrink-0 text-[10px] capitalize"
+              >
+                {item.status.replace("_", " ")}
+              </Badge>
+            </div>
+
+            <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
+              <Badge variant="outline" className="text-[10px]">
+                {item.type}
+              </Badge>
+              <span className="capitalize">{item.frequency}</span>
+            </div>
+
+            <div className="flex items-center gap-2 pl-4 pt-1">
+              {isOwn ? (
+                <>
+                  {item.status !== "completed" && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => handleCheckin(item.id)}
+                      className="gap-1.5 rounded-lg"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Check in
+                    </Button>
+                  )}
+                  {item.status === "active" && (
+                    <Button size="sm" variant="outline" className="gap-1.5 rounded-lg">
+                      <Pause className="h-3.5 w-3.5" />
+                      Pause
+                    </Button>
+                  )}
+                  {item.status === "paused" && (
+                    <Button size="sm" variant="outline" className="gap-1.5 rounded-lg">
+                      <Play className="h-3.5 w-3.5" />
+                      Resume
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleSendStrength(item.id, item.user_id)}
+                  disabled={sendingStrength === item.id}
+                  className="gap-1.5 rounded-lg text-pink-500 border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600"
+                >
+                  <Heart className="h-3.5 w-3.5" />
+                  {sendingStrength === item.id ? "Sending..." : "Send Strength"}
+                </Button>
+              )}
+            </div>
+          </div>
         )
       })}
     </div>

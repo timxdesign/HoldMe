@@ -4,15 +4,15 @@ import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { UserPlus, Copy, Check } from "lucide-react"
+import { UserPlus, Copy, Check, Mail, Link as LinkIcon, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface InviteButtonProps {
@@ -24,11 +24,40 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [inviteLink, setInviteLink] = useState("")
+  const [emailSent, setEmailSent] = useState(false)
   const [copied, setCopied] = useState(false)
   const supabase = createClient()
 
-  async function handleInvite(e: React.FormEvent) {
+  async function handleEmailInvite(e: React.FormEvent) {
     e.preventDefault()
+    if (!email) return
+    setLoading(true)
+
+    const res = await fetch("/api/invite/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ spaceId, email }),
+    })
+
+    const data = await res.json()
+    setLoading(false)
+
+    if (!res.ok) {
+      toast.error(data.error)
+      return
+    }
+
+    setInviteLink(data.inviteLink)
+    setEmailSent(true)
+    toast.success(
+      data.isNewUser
+        ? "Invite sent! They'll be added automatically when they sign up."
+        : "Invite created! Share the link with them."
+    )
+    setEmail("")
+  }
+
+  async function handleGenerateLink() {
     setLoading(true)
 
     const {
@@ -46,7 +75,6 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
       .insert({
         space_id: spaceId,
         inviter_id: user.id,
-        email: email || null,
       })
       .select()
       .single()
@@ -60,8 +88,7 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
 
     const link = `${window.location.origin}/invite/${data.token}`
     setInviteLink(link)
-    toast.success("Invite created!")
-    setEmail("")
+    toast.success("Link created!")
   }
 
   function handleCopy() {
@@ -71,55 +98,114 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function handleReset() {
+    setEmail("")
+    setInviteLink("")
+    setEmailSent(false)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v)
+        if (!v) handleReset()
+      }}
+    >
       <DialogTrigger
-        render={<Button variant="outline" className="w-full gap-2" />}
+        render={<Button size="sm" variant="default" className="gap-1.5 rounded-lg" />}
       >
-        <UserPlus className="h-4 w-4" />
-        Invite Partner
+        <UserPlus className="h-3.5 w-3.5" />
+        Invite
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Invite an Accountability Partner</DialogTitle>
+          <DialogTitle>Invite a partner</DialogTitle>
+          <DialogDescription>
+            Send an email invite or generate a share link.
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleInvite} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email (optional)</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="partner@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave blank to generate a share link instead.
-            </p>
-          </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating invite..." : "Create Invite"}
-          </Button>
-        </form>
-
-        {inviteLink && (
-          <div className="space-y-2 pt-2 border-t">
-            <Label>Share this link</Label>
-            <div className="flex gap-2">
-              <Input value={inviteLink} readOnly className="text-xs" />
+        {!emailSent && !inviteLink ? (
+          <div className="space-y-4">
+            <form onSubmit={handleEmailInvite} className="space-y-3">
+              <div className="space-y-2">
+                <label htmlFor="invite-email" className="text-sm font-medium">
+                  Email address
+                </label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  placeholder="partner@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-10"
+                />
+              </div>
               <Button
-                size="icon"
-                variant="outline"
-                onClick={handleCopy}
+                type="submit"
+                className="w-full gap-2"
+                disabled={loading || !email.trim()}
               >
-                {copied ? (
-                  <Check className="h-4 w-4" />
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Mail className="h-4 w-4" />
                 )}
+                {loading ? "Sending..." : "Send Email Invite"}
               </Button>
+            </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-popover px-2 text-muted-foreground">or</span>
+              </div>
             </div>
+
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={handleGenerateLink}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LinkIcon className="h-4 w-4" />
+              )}
+              Generate Share Link
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {emailSent && (
+              <div className="rounded-xl bg-green-500/10 p-3 text-center">
+                <Mail className="h-5 w-5 text-green-600 mx-auto mb-1.5" />
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                  Invite sent!
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  They&apos;ll be automatically added when they sign up.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Invite link</label>
+              <div className="flex gap-2">
+                <Input value={inviteLink} readOnly className="text-xs h-10" />
+                <Button size="icon" variant="outline" onClick={handleCopy} className="h-10 w-10 shrink-0">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={handleReset}>
+              Invite Another
+            </Button>
           </div>
         )}
       </DialogContent>

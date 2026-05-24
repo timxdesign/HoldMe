@@ -59,6 +59,14 @@ export default function SignupPage() {
       return
     }
 
+    try {
+      const res = await fetch("/api/invite/auto-join", { method: "POST" })
+      const data = await res.json()
+      if (data.joined > 0) {
+        toast.success(`You've been added to ${data.joined} space${data.joined > 1 ? "s" : ""}!`)
+      }
+    } catch {}
+
     window.location.href = "/dashboard"
   }
 

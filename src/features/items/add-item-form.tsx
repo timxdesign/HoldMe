@@ -5,28 +5,35 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus } from "lucide-react"
+import { Plus, Target, CheckSquare, Repeat, Handshake, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface AddItemFormProps {
   spaceId: string
 }
+
+const typeOptions = [
+  { value: "goal", label: "Goal", icon: Target },
+  { value: "task", label: "Task", icon: CheckSquare },
+  { value: "habit", label: "Habit", icon: Repeat },
+  { value: "commitment", label: "Commitment", icon: Handshake },
+]
+
+const frequencyOptions = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "one_time", label: "One time" },
+]
 
 export function AddItemForm({ spaceId }: AddItemFormProps) {
   const [open, setOpen] = useState(false)
@@ -68,7 +75,7 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
       return
     }
 
-    toast.success("Item added!")
+    toast.success("Goal added!")
     setTitle("")
     setDescription("")
     setType("goal")
@@ -80,72 +87,114 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        render={<Button variant="outline" className="w-full gap-2" />}
+        render={<Button size="sm" variant="outline" className="gap-1.5 rounded-lg" />}
       >
-        <Plus className="h-4 w-4" />
-        Add accountability item
+        <Plus className="h-3.5 w-3.5" />
+        Add Goal
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Accountability Item</DialogTitle>
+          <DialogTitle>Add a new goal</DialogTitle>
+          <DialogDescription>
+            What do you want to be held accountable for?
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <label htmlFor="goal-title" className="text-sm font-medium">
+              What&apos;s the goal?
+            </label>
             <Input
-              id="title"
-              placeholder="e.g., Wake up at 5AM"
+              id="goal-title"
+              placeholder="e.g., Wake up at 5AM, Read 20 pages..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              className="h-10"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+            <label htmlFor="goal-desc" className="text-sm font-medium">
+              Details{" "}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
             <Textarea
-              id="description"
-              placeholder="More details about this goal..."
+              id="goal-desc"
+              placeholder="Add context your partners should know..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
+              className="resize-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={type} onValueChange={(val) => setType(val ?? "goal")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="goal">Goal</SelectItem>
-                  <SelectItem value="task">Task</SelectItem>
-                  <SelectItem value="habit">Habit</SelectItem>
-                  <SelectItem value="commitment">Commitment</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Frequency</Label>
-              <Select value={frequency} onValueChange={(val) => setFrequency(val ?? "daily")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="one_time">One time</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-2.5">
+            <label className="text-sm font-medium">Type</label>
+            <div className="grid grid-cols-4 gap-2">
+              {typeOptions.map((opt) => {
+                const isSelected = type === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setType(opt.value)}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl p-3 text-center ring-1 transition-all ${
+                      isSelected
+                        ? "ring-brand bg-brand/5 shadow-sm"
+                        : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/50"
+                    }`}
+                  >
+                    <opt.icon
+                      className={`h-4 w-4 ${isSelected ? "text-brand" : "text-muted-foreground"}`}
+                    />
+                    <span
+                      className={`text-[11px] font-medium ${isSelected ? "text-brand" : "text-muted-foreground"}`}
+                    >
+                      {opt.label}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Adding..." : "Add Item"}
+          <div className="space-y-2.5">
+            <label className="text-sm font-medium">How often?</label>
+            <div className="flex flex-wrap gap-2">
+              {frequencyOptions.map((opt) => {
+                const isSelected = frequency === opt.value
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFrequency(opt.value)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 transition-all ${
+                      isSelected
+                        ? "ring-brand bg-brand/10 text-brand"
+                        : "ring-foreground/10 text-muted-foreground hover:ring-foreground/20 hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-10 gap-2"
+            disabled={loading || !title.trim()}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Adding...
+              </>
+            ) : (
+              "Add Goal"
+            )}
           </Button>
         </form>
       </DialogContent>
