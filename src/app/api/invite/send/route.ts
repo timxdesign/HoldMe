@@ -76,8 +76,7 @@ export async function POST(request: Request) {
   const origin = request.headers.get("origin") ?? ""
   const inviteLink = `${origin}/invite/${invite.token}`
 
-  const { data: authUsers } = await serviceClient.auth.admin.listUsers()
-  const userExists = authUsers?.users?.some((u) => u.email === email)
+  const userExists = !!existingUserRecord
 
   if (!userExists) {
     await serviceClient.auth.admin.inviteUserByEmail(email, {
