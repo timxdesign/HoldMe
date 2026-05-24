@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { AcceptInviteButton } from "./accept-button"
+import { Users } from "lucide-react"
 
 interface InvitePageProps {
   params: Promise<{ token: string }>
@@ -36,14 +38,13 @@ export default async function InvitePage({ params }: InvitePageProps) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) {
-    redirect(`/auth/login?next=/invite/${token}`)
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-muted/50 to-background">
       <Card className="max-w-sm w-full">
         <CardHeader className="text-center pb-2">
+          <div className="mx-auto rounded-full bg-brand/10 p-3 mb-3 w-fit">
+            <Users className="h-6 w-6 text-brand" />
+          </div>
           <p className="text-sm text-muted-foreground">
             You&apos;ve been invited to join
           </p>
@@ -57,11 +58,26 @@ export default async function InvitePage({ params }: InvitePageProps) {
           )}
         </CardHeader>
         <CardContent className="pt-4">
-          <AcceptInviteButton
-            inviteId={invite.id}
-            spaceId={invite.space_id}
-            userId={user.id}
-          />
+          {user ? (
+            <AcceptInviteButton
+              inviteId={invite.id}
+              spaceId={invite.space_id}
+              userId={user.id}
+            />
+          ) : (
+            <div className="space-y-3">
+              <Button asChild className="w-full">
+                <Link href={`/auth/signup?next=/invite/${token}`}>
+                  Sign up to join
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="w-full">
+                <Link href={`/auth/login?next=/invite/${token}`}>
+                  Already have an account? Log in
+                </Link>
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

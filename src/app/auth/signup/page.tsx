@@ -9,6 +9,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { toast } from "sonner"
 import Link from "next/link"
 
+function getNextUrl() {
+  if (typeof window === "undefined") return "/dashboard"
+  const params = new URLSearchParams(window.location.search)
+  return params.get("next") ?? "/dashboard"
+}
+
 export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [fullName, setFullName] = useState("")
@@ -67,14 +73,14 @@ export default function SignupPage() {
       }
     } catch {}
 
-    window.location.href = "/dashboard"
+    window.location.href = getNextUrl()
   }
 
   async function handleGoogleSignup() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getNextUrl())}`,
       },
     })
 
