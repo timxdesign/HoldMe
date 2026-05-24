@@ -2,10 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Pause, Play, Heart, Target } from "lucide-react"
+import {
+  CheckCircle2,
+  Pause,
+  Play,
+  Heart,
+  Target,
+  Repeat,
+  CheckSquare,
+  Handshake,
+  Clock,
+  User,
+} from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface Item {
   id: string
@@ -22,14 +33,29 @@ interface ItemListProps {
   currentUserId: string
   spaceStrengths?: { id: string; accountability_items: unknown }[]
   spaceId?: string
+  memberNames?: Record<string, string>
 }
 
-const statusConfig = {
-  active: { variant: "default" as const, color: "bg-green-500" },
-  in_progress: { variant: "secondary" as const, color: "bg-blue-500" },
-  completed: { variant: "default" as const, color: "bg-brand" },
-  missed: { variant: "destructive" as const, color: "bg-red-500" },
-  paused: { variant: "outline" as const, color: "bg-muted-foreground" },
+const typeConfig: Record<string, { icon: typeof Target; color: string; bg: string }> = {
+  goal: { icon: Target, color: "text-brand", bg: "bg-brand/10" },
+  habit: { icon: Repeat, color: "text-green-500", bg: "bg-green-500/10" },
+  task: { icon: CheckSquare, color: "text-orange-500", bg: "bg-orange-500/10" },
+  commitment: { icon: Handshake, color: "text-purple-500", bg: "bg-purple-500/10" },
+}
+
+const statusConfig: Record<string, { label: string; color: string; dot: string }> = {
+  active: { label: "Active", color: "text-green-600 bg-green-500/10", dot: "bg-green-500" },
+  in_progress: { label: "In Progress", color: "text-blue-600 bg-blue-500/10", dot: "bg-blue-500" },
+  completed: { label: "Completed", color: "text-brand bg-brand/10", dot: "bg-brand" },
+  missed: { label: "Missed", color: "text-red-600 bg-red-500/10", dot: "bg-red-500" },
+  paused: { label: "Paused", color: "text-muted-foreground bg-muted", dot: "bg-muted-foreground" },
+}
+
+const frequencyLabels: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  one_time: "One-time",
 }
 
 function HeartBurst({ onDone }: { onDone: () => void }) {
@@ -39,7 +65,7 @@ function HeartBurst({ onDone }: { onDone: () => void }) {
   }, [onDone])
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl z-10">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-10">
       {[...Array(6)].map((_, i) => (
         <div
           key={i}
@@ -51,10 +77,7 @@ function HeartBurst({ onDone }: { onDone: () => void }) {
             animationDelay: `${i * 0.08}s`,
           }}
         >
-          <Heart
-            className="h-3 w-3 text-pink-500 fill-pink-500"
-            style={{ opacity: 0.7 }}
-          />
+          <Heart className="h-3 w-3 text-pink-500 fill-pink-500" style={{ opacity: 0.7 }} />
         </div>
       ))}
     </div>
@@ -68,9 +91,9 @@ function StrengthReceivedFlash({ senderName, onDone }: { senderName: string; onD
   }, [onDone])
 
   return (
-    <div className="absolute inset-0 pointer-events-none rounded-xl z-10 animate-in fade-in duration-300">
-      <div className="absolute inset-0 rounded-xl ring-2 ring-pink-500/40 animate-pulse" />
-      <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-pink-500 text-white text-[10px] font-semibold px-2 py-1 rounded-full animate-in slide-in-from-top-2 duration-300">
+    <div className="absolute inset-0 pointer-events-none rounded-2xl z-10 animate-in fade-in duration-300">
+      <div className="absolute inset-0 rounded-2xl ring-2 ring-pink-500/40 animate-pulse" />
+      <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 bg-pink-500 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full animate-in slide-in-from-top-2 duration-300">
         <Heart className="h-3 w-3 fill-white" />
         {senderName} sent strength!
       </div>
@@ -78,21 +101,12 @@ function StrengthReceivedFlash({ senderName, onDone }: { senderName: string; onD
   )
 }
 
-export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId }: ItemListProps) {
+export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, memberNames }: ItemListProps) {
   const [localItems, setLocalItems] = useState(items)
   const [sendingStrength, setSendingStrength] = useState<string | null>(null)
   const [sentStrength, setSentStrength] = useState<string | null>(null)
   const [receivedFlash, setReceivedFlash] = useState<Map<string, string>>(new Map())
   const supabase = createClient()
-
-  const strengthCountByItem = new Map<string, number>()
-  spaceStrengths.forEach((s) => {
-    const item = s.accountability_items as { space_id: string } | null
-    if (item) {
-      const key = s.id
-      strengthCountByItem.set(key, (strengthCountByItem.get(key) ?? 0) + 1)
-    }
-  })
 
   const handleRealtimeStrength = useCallback(
     (payload: { new: { item_id: string; sender_id: string } }) => {
@@ -122,11 +136,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId }:
       .channel(`strengths-space-${spaceId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "strengths",
-        },
+        { event: "INSERT", schema: "public", table: "strengths" },
         handleRealtimeStrength
       )
       .subscribe()
@@ -178,12 +188,13 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId }:
 
   if (localItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="rounded-full bg-muted p-3 mb-3">
-          <Target className="h-5 w-5 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="rounded-2xl bg-muted/60 p-4 mb-4">
+          <Target className="h-6 w-6 text-muted-foreground" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          No accountability items yet. Add your first goal to get started.
+        <h3 className="text-sm font-semibold mb-1">No goals yet</h3>
+        <p className="text-xs text-muted-foreground max-w-[220px]">
+          Add your first goal to start tracking progress with your partners.
         </p>
       </div>
     )
@@ -193,22 +204,27 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId }:
     <div className="space-y-3">
       {localItems.map((item) => {
         const isOwn = item.user_id === currentUserId
-        const config = statusConfig[item.status as keyof typeof statusConfig] ?? statusConfig.active
+        const type = typeConfig[item.type] ?? typeConfig.goal
+        const status = statusConfig[item.status] ?? statusConfig.active
         const hasStrengths = spaceStrengths.some(
-          (s) => (s.accountability_items as { space_id: string; title: string } | null)?.title === item.title
+          (s) => (s.accountability_items as { title: string } | null)?.title === item.title
         )
         const flashSender = receivedFlash.get(item.id)
         const justSent = sentStrength === item.id
+        const ownerName = !isOwn && memberNames ? memberNames[item.user_id] : undefined
+        const TypeIcon = type.icon
 
         return (
           <div
             key={item.id}
-            className="relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 p-4 space-y-3 transition-all hover:ring-brand/20"
-          >
-            {justSent && (
-              <HeartBurst onDone={() => setSentStrength(null)} />
+            className={cn(
+              "relative overflow-hidden rounded-2xl bg-card ring-1 transition-all duration-300",
+              isOwn
+                ? "ring-foreground/10 hover:ring-brand/25 hover:shadow-md"
+                : "ring-foreground/8 hover:ring-foreground/15 hover:shadow-sm"
             )}
-
+          >
+            {justSent && <HeartBurst onDone={() => setSentStrength(null)} />}
             {flashSender && (
               <StrengthReceivedFlash
                 senderName={flashSender}
@@ -222,92 +238,112 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId }:
               />
             )}
 
-            {hasStrengths && isOwn && (
-              <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none">
-                <div className="absolute top-2 right-2">
-                  <Heart className="h-3.5 w-3.5 text-pink-500 fill-pink-500 animate-pulse" />
-                </div>
-              </div>
+            {isOwn && (
+              <div className={cn("h-0.5", type.bg.replace("/10", "/30"))} />
             )}
 
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${config.color} shrink-0`} />
-                  <h4 className="font-semibold text-sm">{item.title}</h4>
+            <div className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className={cn("rounded-xl p-2 shrink-0 mt-0.5", type.bg)}>
+                  <TypeIcon className={cn("h-4 w-4", type.color)} />
                 </div>
-                {item.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 pl-4">
-                    {item.description}
-                  </p>
+
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="font-semibold text-sm leading-snug">{item.title}</h4>
+                    {hasStrengths && isOwn && (
+                      <Heart className="h-3.5 w-3.5 text-pink-500 fill-pink-500 animate-pulse shrink-0 mt-0.5" />
+                    )}
+                  </div>
+
+                  {ownerName && (
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      <span>{ownerName}</span>
+                    </div>
+                  )}
+
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pl-11">
+                <div className="flex items-center gap-2">
+                  <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold", status.color)}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full", status.dot)} />
+                    {status.label}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">
+                    <Clock className="h-2.5 w-2.5" />
+                    {frequencyLabels[item.frequency] ?? item.frequency}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pl-11 pt-0.5">
+                {isOwn ? (
+                  <>
+                    {item.status !== "completed" && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleCheckin(item.id)}
+                        className="gap-1.5 rounded-lg h-8 text-xs"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Check in
+                      </Button>
+                    )}
+                    {item.status === "active" && (
+                      <Button size="sm" variant="outline" className="gap-1.5 rounded-lg h-8 text-xs">
+                        <Pause className="h-3.5 w-3.5" />
+                        Pause
+                      </Button>
+                    )}
+                    {item.status === "paused" && (
+                      <Button size="sm" variant="outline" className="gap-1.5 rounded-lg h-8 text-xs">
+                        <Play className="h-3.5 w-3.5" />
+                        Resume
+                      </Button>
+                    )}
+                    {item.status === "completed" && (
+                      <span className="text-[11px] text-brand font-medium flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Completed
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSendStrength(item.id, item.user_id)}
+                    disabled={sendingStrength === item.id || justSent}
+                    className={cn(
+                      "gap-1.5 rounded-lg h-8 text-xs transition-all duration-300",
+                      justSent
+                        ? "text-white bg-pink-500 border-pink-500 hover:bg-pink-500 hover:text-white"
+                        : "text-pink-500 border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600"
+                    )}
+                  >
+                    <Heart
+                      className={cn(
+                        "h-3.5 w-3.5 transition-all duration-300",
+                        justSent && "fill-white scale-110"
+                      )}
+                    />
+                    {sendingStrength === item.id
+                      ? "Sending..."
+                      : justSent
+                        ? "Sent!"
+                        : "Send Strength"}
+                  </Button>
                 )}
               </div>
-              <Badge
-                variant={config.variant}
-                className="shrink-0 text-[10px] capitalize"
-              >
-                {item.status.replace("_", " ")}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-2 pl-4 text-xs text-muted-foreground">
-              <Badge variant="outline" className="text-[10px]">
-                {item.type}
-              </Badge>
-              <span className="capitalize">{item.frequency}</span>
-            </div>
-
-            <div className="flex items-center gap-2 pl-4 pt-1">
-              {isOwn ? (
-                <>
-                  {item.status !== "completed" && (
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => handleCheckin(item.id)}
-                      className="gap-1.5 rounded-lg"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Check in
-                    </Button>
-                  )}
-                  {item.status === "active" && (
-                    <Button size="sm" variant="outline" className="gap-1.5 rounded-lg">
-                      <Pause className="h-3.5 w-3.5" />
-                      Pause
-                    </Button>
-                  )}
-                  {item.status === "paused" && (
-                    <Button size="sm" variant="outline" className="gap-1.5 rounded-lg">
-                      <Play className="h-3.5 w-3.5" />
-                      Resume
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleSendStrength(item.id, item.user_id)}
-                  disabled={sendingStrength === item.id || justSent}
-                  className={`gap-1.5 rounded-lg transition-all duration-300 ${
-                    justSent
-                      ? "text-white bg-pink-500 border-pink-500 hover:bg-pink-500 hover:text-white"
-                      : "text-pink-500 border-pink-500/30 hover:bg-pink-500/10 hover:text-pink-600"
-                  }`}
-                >
-                  <Heart
-                    className={`h-3.5 w-3.5 transition-all duration-300 ${
-                      justSent ? "fill-white scale-110" : ""
-                    }`}
-                  />
-                  {sendingStrength === item.id
-                    ? "Sending..."
-                    : justSent
-                      ? "Sent!"
-                      : "Send Strength"}
-                </Button>
-              )}
             </div>
           </div>
         )

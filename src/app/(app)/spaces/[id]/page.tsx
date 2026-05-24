@@ -46,13 +46,14 @@ export default async function SpacePage({ params }: SpacePageProps) {
   const memberCount = members?.length ?? 0
   const itemCount = items?.length ?? 0
 
-  const memberNameMap = new Map(
+  const memberNameMap = Object.fromEntries(
     (members ?? []).map((m) => [m.user_id, (m.users as { full_name: string | null } | null)?.full_name ?? "Someone"])
   )
+  const memberNameLookup = new Map(Object.entries(memberNameMap))
 
   const strengthsWithItems = (strengths ?? []).map((s) => ({
     id: s.id,
-    senderName: memberNameMap.get(s.sender_id) ?? "Someone",
+    senderName: memberNameLookup.get(s.sender_id) ?? "Someone",
     itemTitle: (s.accountability_items as { title: string; space_id: string })?.title ?? "",
     message: s.message,
     createdAt: s.created_at,
@@ -83,6 +84,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
           currentUserId={user?.id ?? ""}
           spaceStrengths={strengths ?? []}
           spaceId={id}
+          memberNames={memberNameMap as Record<string, string>}
         />
       </section>
     </div>
