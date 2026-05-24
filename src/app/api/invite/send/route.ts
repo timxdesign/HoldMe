@@ -78,18 +78,31 @@ export async function POST(request: Request) {
 
   const userExists = !!existingUserRecord
 
+  let emailSent = false
+
   if (!userExists) {
-    await serviceClient.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${origin}/auth/callback?next=/invite/${invite.token}`,
-      data: {
-        invited_to_space: space.name,
-      },
-    })
+    try {
+      const emailPromise = serviceClient.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${origin}/auth/callback?next=/invite/${invite.token}`,
+        data: {
+          invited_to_space: space.name,
+        },
+      })
+
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 8000)
+      )
+
+      const result = await Promise.race([emailPromise, timeout]) as { error?: unknown }
+      emailSent = !result?.error
+    } catch {
+      emailSent = false
+    }
   }
 
   return NextResponse.json({
     inviteLink,
-    emailSent: true,
+    emailSent,
     isNewUser: !userExists,
   })
 }

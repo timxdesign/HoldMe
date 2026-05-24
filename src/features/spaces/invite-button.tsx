@@ -49,11 +49,13 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
 
     setInviteLink(data.inviteLink)
     setEmailSent(true)
-    toast.success(
-      data.isNewUser
-        ? "Invite sent! They'll be added automatically when they sign up."
-        : "Invite created! Share the link with them."
-    )
+    if (data.isNewUser && data.emailSent) {
+      toast.success("Invite sent! They'll be added automatically when they sign up.")
+    } else if (data.isNewUser && !data.emailSent) {
+      toast.success("Invite created! Share the link with them to sign up.")
+    } else {
+      toast.success("Invite created! Share the link with them.")
+    }
     setEmail("")
   }
 
