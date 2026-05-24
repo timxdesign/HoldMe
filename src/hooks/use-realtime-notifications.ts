@@ -25,9 +25,16 @@ export function useRealtimeNotifications(userId: string | undefined) {
             title: string
             body: string
             type: string
+            data: { sender_name?: string } | null
           }
 
           if (notification.type === "strength") {
+            const senderName = notification.data?.sender_name ?? "Someone"
+            window.dispatchEvent(
+              new CustomEvent("strength-received", {
+                detail: { senderName },
+              })
+            )
             toast(notification.title, {
               description: notification.body,
               icon: "💪",
