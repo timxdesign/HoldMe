@@ -68,7 +68,8 @@ alter table public.circle_invites enable row level security;
 -- RLS: Circles
 create policy "Circle members can view circles" on public.circles
   for select using (
-    id in (select circle_id from public.circle_members where user_id = auth.uid())
+    created_by = auth.uid()
+    or id in (select circle_id from public.circle_members where user_id = auth.uid())
   );
 
 create policy "Users can create circles" on public.circles
@@ -80,11 +81,18 @@ create policy "Circle owners can update" on public.circles
 create policy "Circle owners can delete" on public.circles
   for delete using (auth.uid() = created_by);
 
+-- Helper to avoid infinite recursion in circle_members RLS
+create or replace function public.is_circle_member(p_circle_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from public.circle_members
+    where circle_id = p_circle_id and user_id = auth.uid()
+  );
+$$ language sql security definer stable;
+
 -- RLS: Circle members
 create policy "Members can view circle members" on public.circle_members
-  for select using (
-    circle_id in (select circle_id from public.circle_members where user_id = auth.uid())
-  );
+  for select using (public.is_circle_member(circle_id));
 
 create policy "Owners can add members" on public.circle_members
   for insert with check (

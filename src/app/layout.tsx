@@ -24,6 +24,10 @@ export const metadata: Metadata = {
   description:
     "A modern accountability platform where you stay consistent through trusted human support.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/brand-asset/favicon.svg",
+    apple: "/brand-asset/app-icon.svg",
+  },
 }
 
 export const viewport: Viewport = {

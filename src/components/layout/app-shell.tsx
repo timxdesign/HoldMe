@@ -23,7 +23,8 @@ export function AppShell({ children, userId }: { children: React.ReactNode; user
       <StrengthEffect />
       <aside className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 border-r bg-sidebar">
         <div className="flex items-center h-14 px-5 border-b">
-          <Link href="/dashboard" className="text-lg font-bold text-brand">
+          <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-brand">
+            <img src="/brand-asset/logo-mark.svg" alt="" className="h-6 w-6" />
             HoldMe
           </Link>
         </div>

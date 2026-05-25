@@ -35,9 +35,10 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex w-56 border-r flex-col bg-muted/30">
-        <div className="p-4 border-b">
+        <div className="flex items-center gap-2 p-4 border-b">
+          <img src="/brand-asset/logo-mark.svg" alt="" className="h-6 w-6" />
           <span className="text-lg font-bold text-brand">HoldMe</span>
-          <span className="text-xs text-muted-foreground ml-2">Admin</span>
+          <span className="text-xs text-muted-foreground">Admin</span>
         </div>
         <nav className="p-2 space-y-1 flex-1">
           {adminNavItems.map((item) => (

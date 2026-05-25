@@ -92,7 +92,8 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-muted/50 to-background">
       <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <img src="/brand-asset/logo-mark.svg" alt="" className="h-12 w-12 mx-auto" />
           <h1 className="text-3xl font-bold tracking-tight text-brand">
             HoldMe
           </h1>

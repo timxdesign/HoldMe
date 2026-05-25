@@ -28,7 +28,10 @@ export default function LandingPage() {
       {/* Header */}
       <header className="fixed top-0 inset-x-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-foreground/[0.04]">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-xl font-bold text-brand">HoldMe</span>
+          <span className="flex items-center gap-2 text-xl font-bold text-brand">
+            <img src="/brand-asset/logo-mark.svg" alt="" className="h-6 w-6" />
+            HoldMe
+          </span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
               <Link href="/auth/login">Log in</Link>
@@ -604,7 +607,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="space-y-2">
-              <span className="text-lg font-bold text-brand">HoldMe</span>
+              <span className="flex items-center gap-2 text-lg font-bold text-brand">
+                <img src="/brand-asset/logo-mark.svg" alt="" className="h-5 w-5" />
+                HoldMe
+              </span>
               <p className="text-sm text-muted-foreground/50 font-light">
                 Stay consistent together.
               </p>
