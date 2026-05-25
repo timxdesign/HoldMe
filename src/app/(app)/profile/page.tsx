@@ -15,7 +15,7 @@ export default async function ProfilePage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/dashboard")
   }
 
   const weekAgo = new Date()

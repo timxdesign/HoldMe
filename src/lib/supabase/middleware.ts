@@ -44,10 +44,20 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (!user && !isPublicPath(pathname)) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    url.searchParams.set("next", pathname)
-    return NextResponse.redirect(url)
+    // Only redirect to login if there are no auth cookies at all.
+    // If cookies exist but getUser() failed, this is likely a transient
+    // network issue (common on mobile) — let the request through so the
+    // user isn't kicked out by a flaky connection.
+    const hasAuthCookies = request.cookies
+      .getAll()
+      .some((c) => c.name.includes("auth-token"))
+
+    if (!hasAuthCookies) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/auth/login"
+      url.searchParams.set("next", pathname)
+      return NextResponse.redirect(url)
+    }
   }
 
   if (user && pathname.startsWith("/auth") && pathname !== "/auth/callback") {

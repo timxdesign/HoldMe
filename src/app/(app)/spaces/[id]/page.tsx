@@ -89,7 +89,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
 
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold">Goals</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Goals</h2>
           {isOwner && <AddItemForm spaceId={id} />}
         </div>
         <ItemList

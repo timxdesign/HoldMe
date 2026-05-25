@@ -22,7 +22,7 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect("/dashboard")
   }
 
   // Check admin status via user metadata or a dedicated admin table
