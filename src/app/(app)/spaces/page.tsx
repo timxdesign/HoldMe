@@ -21,7 +21,7 @@ export default async function SpacesPage() {
   const [{ data: spaces }, { data: strengths }] = await Promise.all([
     supabase
       .from("spaces")
-      .select("*, space_members(user_id, users(full_name)), accountability_items(count)")
+      .select("*, owner:users!owner_id(full_name), space_members(count), accountability_items(count)")
       .order("updated_at", { ascending: false }),
     supabase
       .from("strengths")
@@ -47,7 +47,7 @@ export default async function SpacesPage() {
 
   const totalMembers =
     spaces?.reduce(
-      (sum, s) => sum + (s.space_members?.length ?? 0),
+      (sum, s) => sum + (s.space_members?.[0]?.count ?? 0),
       0
     ) ?? 0
   const totalGoals =
@@ -146,15 +146,13 @@ export default async function SpacesPage() {
                 joinedSpaces.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2">
                     {joinedSpaces.map((space) => {
-                      const ownerMember = (space.space_members as { user_id: string; users: { full_name: string | null } | null }[] | null)
-                        ?.find((m) => m.user_id === space.owner_id)
-                      const ownerName = ownerMember?.users?.full_name ?? undefined
+                      const owner = space.owner as { full_name: string | null } | null
                       return (
                         <SpaceCard
                           key={space.id}
                           space={space}
                           strengthCount={strengthsBySpace.get(space.id) ?? 0}
-                          ownerName={ownerName}
+                          ownerName={owner?.full_name ?? undefined}
                         />
                       )
                     })}

@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       .single(),
     supabase
       .from("spaces")
-      .select("*, space_members(user_id, users(full_name)), accountability_items(count)")
+      .select("*, owner:users!owner_id(full_name), space_members(count), accountability_items(count)")
       .order("updated_at", { ascending: false })
       .limit(5),
     supabase
@@ -139,11 +139,8 @@ export default async function DashboardPage() {
             <div className="grid gap-3">
               {spaces.map((space) => {
                 const isSpaceOwner = space.owner_id === authUser?.id
-                const ownerMember = !isSpaceOwner
-                  ? (space.space_members as { user_id: string; users: { full_name: string | null } | null }[] | null)
-                      ?.find((m) => m.user_id === space.owner_id)
-                  : undefined
-                const ownerName = ownerMember?.users?.full_name ?? undefined
+                const owner = space.owner as { full_name: string | null } | null
+                const ownerName = !isSpaceOwner ? (owner?.full_name ?? undefined) : undefined
                 return (
                   <SpaceCard key={space.id} space={space} ownerName={ownerName} isOwner={isSpaceOwner} />
                 )

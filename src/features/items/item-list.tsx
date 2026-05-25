@@ -345,7 +345,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                 </div>
               )}
 
-              <div className="flex items-center gap-3.5 px-4 py-3.5">
+              <div className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30">
                 {isOwn ? (
                   <button
                     onClick={() => !isChecked && !isPaused && handleCheckin(item.id)}

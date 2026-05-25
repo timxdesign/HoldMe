@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import { SpaceHeader } from "@/features/spaces/space-header"
 import { ItemList } from "@/features/items/item-list"
 import { AddItemForm } from "@/features/items/add-item-form"
+import { InviteButton } from "@/features/spaces/invite-button"
 import { StrengthBanner } from "@/features/spaces/strength-banner"
+import { FadeIn } from "@/components/ui/fade-in"
 
 interface SpacePageProps {
   params: Promise<{ id: string }>
@@ -50,7 +52,6 @@ export default async function SpacePage({ params }: SpacePageProps) {
 
   const isOwner = space.owner_id === user?.id
   const memberCount = members?.length ?? 0
-  const itemCount = items?.length ?? 0
 
   const memberNameMap = Object.fromEntries(
     (members ?? []).map((m) => [m.user_id, (m.users as { full_name: string | null } | null)?.full_name ?? "Someone"])
@@ -74,26 +75,32 @@ export default async function SpacePage({ params }: SpacePageProps) {
   }))
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-6 md:py-10">
       <SpaceHeader
         spaceId={id}
         name={space.name}
         description={space.description}
         memberCount={memberCount}
-        itemCount={itemCount}
         isOwner={isOwner}
         ownerName={ownerName}
       />
 
-      {strengthsWithItems.length > 0 && (
-        <StrengthBanner strengths={strengthsWithItems} />
+      {isOwner && (
+        <FadeIn delay={250} className="mt-5">
+          <div className="flex items-center gap-2">
+            <InviteButton spaceId={id} />
+            <AddItemForm spaceId={id} />
+          </div>
+        </FadeIn>
       )}
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Goals</h2>
-          {isOwner && <AddItemForm spaceId={id} />}
-        </div>
+      {strengthsWithItems.length > 0 && (
+        <FadeIn delay={300} className="mt-6">
+          <StrengthBanner strengths={strengthsWithItems} />
+        </FadeIn>
+      )}
+
+      <FadeIn delay={350} className="mt-8">
         <ItemList
           items={items ?? []}
           currentUserId={user?.id ?? ""}
@@ -102,7 +109,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
           memberNames={memberNameMap as Record<string, string>}
           lastCheckins={lastCheckinMap}
         />
-      </section>
+      </FadeIn>
     </div>
   )
 }
