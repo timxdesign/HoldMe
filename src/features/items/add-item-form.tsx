@@ -22,6 +22,9 @@ import {
   ArrowRight,
   Sparkles,
   Check,
+  Bell,
+  BellOff,
+  Clock,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -76,7 +79,24 @@ const frequencyOptions = [
   { value: "one_time", label: "Just once", sub: "One-time goal" },
 ]
 
+const presetTimes = [
+  { label: "Morning", value: "08:00", icon: "🌅" },
+  { label: "Afternoon", value: "14:00", icon: "☀️" },
+  { label: "Evening", value: "19:00", icon: "🌙" },
+]
+
+const dayLabels = [
+  { label: "M", value: 1 },
+  { label: "T", value: 2 },
+  { label: "W", value: 3 },
+  { label: "T", value: 4 },
+  { label: "F", value: 5 },
+  { label: "S", value: 6 },
+  { label: "S", value: 7 },
+]
+
 const TITLE_MAX = 80
+const TOTAL_STEPS = 4
 
 export function AddItemForm({ spaceId }: AddItemFormProps) {
   const [open, setOpen] = useState(false)
@@ -85,6 +105,9 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
   const [description, setDescription] = useState("")
   const [type, setType] = useState("")
   const [frequency, setFrequency] = useState("")
+  const [reminderEnabled, setReminderEnabled] = useState(false)
+  const [reminderTimes, setReminderTimes] = useState<string[]>(["08:00"])
+  const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [direction, setDirection] = useState<"forward" | "back">("forward")
@@ -97,6 +120,9 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
     setDescription("")
     setType("")
     setFrequency("")
+    setReminderEnabled(false)
+    setReminderTimes(["08:00"])
+    setReminderDays([1, 2, 3, 4, 5])
     setLoading(false)
     setSuccess(false)
     setDirection("forward")
@@ -125,6 +151,11 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
       return
     }
 
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const reminderSchedule = reminderEnabled
+      ? { enabled: true, times: reminderTimes, timezone, days: reminderDays }
+      : null
+
     const { error } = await supabase.from("accountability_items").insert({
       space_id: spaceId,
       user_id: user.id,
@@ -132,6 +163,7 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
       description: description || null,
       type: type || "goal",
       frequency: frequency || "daily",
+      reminder_schedule: reminderSchedule,
     })
 
     setLoading(false)
@@ -156,6 +188,7 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
     0: !!type,
     1: !!title.trim(),
     2: !!frequency,
+    3: true,
   }
 
   return (
@@ -173,10 +206,10 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
         Add Goal
       </DialogTrigger>
       <DialogContent className="sm:max-w-md overflow-hidden" showCloseButton={!success}>
-        {success ? <SuccessView /> : (
+        {success ? <SuccessView reminderEnabled={reminderEnabled} /> : (
           <>
-            <StepHeader step={step} selectedType={selectedType} />
-            <StepIndicator current={step} total={3} />
+            <StepHeader step={step} selectedType={selectedType} frequency={frequency} />
+            <StepIndicator current={step} total={TOTAL_STEPS} />
 
             <div
               key={step}
@@ -201,6 +234,17 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
               {step === 2 && (
                 <StepFrequency frequency={frequency} onSelect={setFrequency} />
               )}
+              {step === 3 && (
+                <StepReminder
+                  enabled={reminderEnabled}
+                  times={reminderTimes}
+                  days={reminderDays}
+                  frequency={frequency}
+                  onToggle={setReminderEnabled}
+                  onTimesChange={setReminderTimes}
+                  onDaysChange={setReminderDays}
+                />
+              )}
             </div>
 
             <StepNav
@@ -218,12 +262,13 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
   )
 }
 
-function StepHeader({ step, selectedType }: { step: number; selectedType?: typeof typeOptions[number] }) {
-  const titles = ["What kind of goal?", "Describe your goal", "How often?"]
+function StepHeader({ step, selectedType, frequency }: { step: number; selectedType?: typeof typeOptions[number]; frequency: string }) {
+  const titles = ["What kind of goal?", "Describe your goal", "How often?", "Set reminders"]
   const subtitles = [
     "Pick the type that fits best.",
     "Give it a clear, specific name.",
     "Choose how often you'll check in.",
+    "Get nudged so you never forget.",
   ]
   return (
     <div className="text-center space-y-1 pt-1">
@@ -235,6 +280,14 @@ function StepHeader({ step, selectedType }: { step: number; selectedType?: typeo
           <span className={cn("text-[11px] font-semibold uppercase tracking-wide", selectedType.color)}>
             {selectedType.label}
           </span>
+          {step >= 3 && frequency && (
+            <>
+              <span className="text-[11px] text-muted-foreground">·</span>
+              <span className="text-[11px] text-muted-foreground font-medium capitalize">
+                {frequency === "one_time" ? "One-time" : frequency}
+              </span>
+            </>
+          )}
         </div>
       )}
       <h2 className="text-lg font-bold tracking-tight">{titles[step]}</h2>
@@ -400,6 +453,209 @@ function StepFrequency({ frequency, onSelect }: { frequency: string; onSelect: (
   )
 }
 
+function StepReminder({
+  enabled,
+  times,
+  days,
+  frequency,
+  onToggle,
+  onTimesChange,
+  onDaysChange,
+}: {
+  enabled: boolean
+  times: string[]
+  days: number[]
+  frequency: string
+  onToggle: (v: boolean) => void
+  onTimesChange: (v: string[]) => void
+  onDaysChange: (v: number[]) => void
+}) {
+  function toggleTime(time: string) {
+    onTimesChange(
+      times.includes(time) ? times.filter((t) => t !== time) : [...times, time]
+    )
+  }
+
+  function toggleDay(day: number) {
+    onDaysChange(
+      days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort()
+    )
+  }
+
+  const isOneTime = frequency === "one_time"
+
+  return (
+    <div className="space-y-4 py-2">
+      {/* Toggle */}
+      <button
+        onClick={() => onToggle(!enabled)}
+        className={cn(
+          "flex items-center gap-3 w-full rounded-xl px-4 py-3.5 text-left ring-1 transition-all duration-200",
+          enabled
+            ? "ring-brand bg-brand/5"
+            : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+        )}
+      >
+        <div className={cn(
+          "rounded-xl p-2",
+          enabled ? "bg-brand/10" : "bg-muted/60"
+        )}>
+          {enabled ? (
+            <Bell className={cn("h-4 w-4", enabled ? "text-brand" : "text-muted-foreground")} />
+          ) : (
+            <BellOff className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1">
+          <p className={cn("text-sm font-semibold", enabled && "text-brand")}>
+            {enabled ? "Reminders on" : "Enable reminders"}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {isOneTime
+              ? "Get a one-time nudge before your deadline"
+              : "Get notified when it's time to check in"}
+          </p>
+        </div>
+        <div
+          className={cn(
+            "h-5 w-9 rounded-full transition-all duration-200 relative shrink-0",
+            enabled ? "bg-brand" : "bg-foreground/15"
+          )}
+        >
+          <div
+            className={cn(
+              "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200",
+              enabled ? "left-[18px]" : "left-0.5"
+            )}
+          />
+        </div>
+      </button>
+
+      {/* Reminder config */}
+      {enabled && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Time presets */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+              When to remind
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {presetTimes.map((preset) => {
+                const selected = times.includes(preset.value)
+                return (
+                  <button
+                    key={preset.value}
+                    onClick={() => toggleTime(preset.value)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-xl px-3 py-3 ring-1 transition-all duration-200",
+                      selected
+                        ? "ring-brand bg-brand/5"
+                        : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+                    )}
+                  >
+                    <span className="text-base">{preset.icon}</span>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      selected ? "text-brand" : "text-foreground"
+                    )}>
+                      {preset.label}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{preset.value}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Day picker - hide for one_time */}
+          {!isOneTime && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                Which days
+              </p>
+              <div className="flex gap-1.5 justify-between">
+                {dayLabels.map((day) => (
+                  <button
+                    key={day.value}
+                    onClick={() => toggleDay(day.value)}
+                    className={cn(
+                      "h-9 w-9 rounded-full text-xs font-semibold transition-all duration-200",
+                      days.includes(day.value)
+                        ? "bg-brand text-white shadow-sm shadow-brand/20"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+              {/* Quick select */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => onDaysChange([1, 2, 3, 4, 5])}
+                  className={cn(
+                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
+                    days.length === 5 && days.every((d) => d <= 5)
+                      ? "bg-brand/10 text-brand"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Weekdays
+                </button>
+                <button
+                  onClick={() => onDaysChange([1, 2, 3, 4, 5, 6, 7])}
+                  className={cn(
+                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
+                    days.length === 7
+                      ? "bg-brand/10 text-brand"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Every day
+                </button>
+                <button
+                  onClick={() => onDaysChange([6, 7])}
+                  className={cn(
+                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
+                    days.length === 2 && days[0] === 6
+                      ? "bg-brand/10 text-brand"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Weekends
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Summary */}
+          {times.length > 0 && (
+            <div className="rounded-xl bg-brand/5 ring-1 ring-brand/10 px-3.5 py-2.5 flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 text-brand shrink-0" />
+              <p className="text-[11px] text-brand font-medium">
+                {isOneTime ? "You'll get a reminder " : "Reminders "}
+                {times.map((t) => presetTimes.find((p) => p.value === t)?.label.toLowerCase() ?? t).join(" & ")}
+                {!isOneTime && days.length < 7 && days.length > 0 && (
+                  <> on {days.length === 5 && days.every((d) => d <= 5) ? "weekdays" : `${days.length} days/week`}</>
+                )}
+                {!isOneTime && days.length === 7 && " every day"}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!enabled && (
+        <div className="rounded-xl bg-muted/40 px-4 py-3 text-center">
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            You can always set up reminders later from the goal card.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StepNav({
   step,
   canProceed,
@@ -415,7 +671,7 @@ function StepNav({
   onNext: () => void
   onSubmit: () => void
 }) {
-  const isLast = step === 2
+  const isLast = step === TOTAL_STEPS - 1
 
   return (
     <div className="flex items-center gap-2 pt-1">
@@ -464,7 +720,7 @@ function StepNav({
   )
 }
 
-function SuccessView() {
+function SuccessView({ reminderEnabled }: { reminderEnabled: boolean }) {
   const [visible, setVisible] = useState(false)
   useEffect(() => { setVisible(true) }, [])
 
@@ -483,7 +739,9 @@ function SuccessView() {
       </div>
       <h3 className="text-lg font-bold">Goal created!</h3>
       <p className="text-sm text-muted-foreground mt-1">
-        Your accountability partners can now see it.
+        {reminderEnabled
+          ? "Reminders set. Your partners can now see it."
+          : "Your accountability partners can now see it."}
       </p>
     </div>
   )

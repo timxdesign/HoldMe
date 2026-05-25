@@ -17,7 +17,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: space }, { data: items }, { data: members }, { data: strengths }] =
+  const [{ data: space }, { data: items }, { data: members }, { data: strengths }, { data: checkins }] =
     await Promise.all([
       supabase.from("spaces").select("*").eq("id", id).single(),
       supabase
@@ -36,6 +36,12 @@ export default async function SpacePage({ params }: SpacePageProps) {
         .eq("receiver_id", user?.id ?? "")
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase
+        .from("item_checkins")
+        .select("item_id, checked_in_at")
+        .eq("user_id", user?.id ?? "")
+        .eq("status", "completed")
+        .order("checked_in_at", { ascending: false }),
     ])
 
   if (!space) {
@@ -50,6 +56,13 @@ export default async function SpacePage({ params }: SpacePageProps) {
     (members ?? []).map((m) => [m.user_id, (m.users as { full_name: string | null } | null)?.full_name ?? "Someone"])
   )
   const memberNameLookup = new Map(Object.entries(memberNameMap))
+
+  const lastCheckinMap: Record<string, string> = {}
+  for (const c of checkins ?? []) {
+    if (!lastCheckinMap[c.item_id]) {
+      lastCheckinMap[c.item_id] = c.checked_in_at
+    }
+  }
 
   const strengthsWithItems = (strengths ?? []).map((s) => ({
     id: s.id,
@@ -85,6 +98,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
           spaceStrengths={strengths ?? []}
           spaceId={id}
           memberNames={memberNameMap as Record<string, string>}
+          lastCheckins={lastCheckinMap}
         />
       </section>
     </div>
