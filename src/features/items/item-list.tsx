@@ -17,6 +17,9 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ReminderSettings } from "./reminder-settings"
+
+type ReminderSchedule = { enabled: boolean; times: string[]; timezone: string; days: number[] }
 
 interface Item {
   id: string
@@ -26,6 +29,8 @@ interface Item {
   frequency: string
   status: string
   user_id: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reminder_schedule: any
 }
 
 interface ItemListProps {
@@ -344,6 +349,15 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                   </Button>
                 )}
               </div>
+
+              {isOwn && item.status === "active" && (
+                <div className="pl-11 pt-1 border-t border-foreground/5 mt-1">
+                  <ReminderSettings
+                    itemId={item.id}
+                    currentSchedule={item.reminder_schedule as ReminderSchedule | null}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )
