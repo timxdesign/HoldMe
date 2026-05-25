@@ -9,19 +9,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Camera,
-  Check,
-  ChevronRight,
+  CheckCircle,
+  AltArrowRight,
   Heart,
-  Layout,
-  Loader2,
-  LogOut,
-  Mail,
-  Pencil,
+  Widget,
+  Restart,
+  Logout2,
+  Letter,
+  Pen2,
   Target,
   Calendar,
-  Zap,
-  CheckCircle2,
-} from "lucide-react"
+  Bolt,
+} from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -197,7 +196,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
               </Avatar>
               <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center">
                 {uploading ? (
-                  <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  <Restart className="h-5 w-5 text-white animate-spin" />
                 ) : (
                   <Camera className="h-5 w-5 text-white" />
                 )}
@@ -218,7 +217,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
                 className="gap-1.5 rounded-full h-8 text-xs"
                 onClick={() => setEditing(true)}
               >
-                <Pencil className="h-3 w-3" />
+                <Pen2 className="h-3 w-3" />
                 Edit profile
               </Button>
             )}
@@ -273,7 +272,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
           {/* Email + member since */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Mail className="h-3 w-3" />
+              <Letter className="h-3 w-3" />
               {email}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -294,7 +293,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
           label="Goals created"
         />
         <StatTile
-          icon={<CheckCircle2 className="h-4 w-4" />}
+          icon={<CheckCircle className="h-4 w-4" />}
           iconBg="bg-green-500/10"
           iconColor="text-green-500"
           value={`${completionRate}%`}
@@ -308,7 +307,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
           label="Strengths received"
         />
         <StatTile
-          icon={<Zap className="h-4 w-4" />}
+          icon={<Bolt className="h-4 w-4" />}
           iconBg="bg-orange-500/10"
           iconColor="text-orange-500"
           value={stats.strengthsSent}
@@ -323,17 +322,17 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
           <ActivityRow
             label="Spaces owned"
             value={stats.spacesOwned}
-            icon={<Layout className="h-3.5 w-3.5 text-brand" />}
+            icon={<Widget className="h-3.5 w-3.5 text-brand" />}
           />
           <ActivityRow
             label="Spaces joined"
             value={stats.spacesJoined}
-            icon={<Layout className="h-3.5 w-3.5 text-purple-500" />}
+            icon={<Widget className="h-3.5 w-3.5 text-purple-500" />}
           />
           <ActivityRow
             label="Total check-ins"
             value={stats.completedCheckins}
-            icon={<CheckCircle2 className="h-3.5 w-3.5 text-green-500" />}
+            icon={<CheckCircle className="h-3.5 w-3.5 text-green-500" />}
           />
           <ActivityRow
             label="Months active"
@@ -374,7 +373,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
                 >
                   <span className="text-base">{interestEmojis[interest]}</span>
                   <span className="truncate">{interest}</span>
-                  {selected && <Check className="h-3.5 w-3.5 ml-auto shrink-0" />}
+                  {selected && <CheckCircle className="h-3.5 w-3.5 ml-auto shrink-0" />}
                 </button>
               )
             })}
@@ -419,9 +418,9 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
             disabled={saving}
           >
             {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Restart className="h-4 w-4 animate-spin" />
             ) : (
-              <Check className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" />
             )}
             {saving ? "Saving..." : "Save changes"}
           </Button>
@@ -447,7 +446,7 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
         onClick={handleLogout}
         className="flex items-center justify-center gap-2 w-full rounded-2xl ring-1 ring-destructive/20 px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
       >
-        <LogOut className="h-4 w-4" />
+        <Logout2 className="h-4 w-4" />
         Log out
       </button>
     </div>
@@ -516,7 +515,7 @@ function QuickLink({
         <p className="text-sm font-medium group-hover:text-brand transition-colors">{label}</p>
         <p className="text-[11px] text-muted-foreground">{description}</p>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-brand transition-colors" />
+      <AltArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-brand transition-colors" />
     </a>
   )
 }

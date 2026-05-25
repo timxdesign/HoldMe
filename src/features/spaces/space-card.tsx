@@ -4,20 +4,20 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import {
-  Users,
-  ChevronRight,
+  UsersGroupTwoRounded,
+  AltArrowRight,
   Heart,
   Target,
   Lock,
-  Globe,
+  Earth,
   Crown,
-  Sparkles,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Loader2,
-  Check,
-} from "lucide-react"
+  Stars,
+  MenuDots,
+  Pen2,
+  TrashBinTrash,
+  Restart,
+  CheckCircle,
+} from "@solar-icons/react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -35,19 +35,27 @@ interface SpaceCardProps {
     name: string
     description: string | null
     visibility: string
-    space_members: { count: number }[] | null
-    accountability_items?: { count: number }[] | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    space_members: any[] | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    accountability_items?: any[] | null
   }
   strengthCount?: number
   ownerName?: string
+  isOwner?: boolean
 }
 
-export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProps) {
-  const memberCount = space.space_members?.[0]?.count ?? 0
-  const itemCount = space.accountability_items?.[0]?.count ?? 0
+export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false }: SpaceCardProps) {
+  const firstMember = space.space_members?.[0]
+  const memberCount = typeof firstMember?.count === "number"
+    ? firstMember.count
+    : space.space_members?.length ?? 0
+  const firstItem = space.accountability_items?.[0]
+  const itemCount = typeof firstItem?.count === "number"
+    ? firstItem.count
+    : space.accountability_items?.length ?? 0
   const isPrivate = space.visibility === "private"
-  const isJoined = !!ownerName
-  const isOwner = !isJoined
+  const isJoined = !isOwner
 
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(space.name)
@@ -161,9 +169,9 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
                     className="gap-1.5 rounded-lg h-8 text-xs"
                   >
                     {savingEdit ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <Restart className="h-3 w-3 animate-spin" />
                     ) : (
-                      <Check className="h-3 w-3" />
+                      <CheckCircle className="h-3 w-3" />
                     )}
                     {savingEdit ? "Saving..." : "Save"}
                   </Button>
@@ -219,11 +227,11 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
                 <div onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors data-popup-open:bg-muted data-popup-open:text-foreground">
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MenuDots className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
                       <DropdownMenuItem onClick={() => { setEditing(true) }}>
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pen2 className="h-3.5 w-3.5" />
                         Edit space
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -233,9 +241,9 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
                         disabled={deleting}
                       >
                         {deleting ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Restart className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <TrashBinTrash className="h-3.5 w-3.5" />
                         )}
                         {deleting ? "Deleting..." : "Delete space"}
                       </DropdownMenuItem>
@@ -251,7 +259,7 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
               )}
               {!isOwner && (
                 <div className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center transition-all duration-300 group-hover:bg-brand/10">
-                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50 transition-all duration-300 group-hover:text-brand group-hover:translate-x-0.5" />
+                  <AltArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 transition-all duration-300 group-hover:text-brand group-hover:translate-x-0.5" />
                 </div>
               )}
             </div>
@@ -262,7 +270,7 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
         {!editing && (
           <div className="flex items-center gap-2 pt-1 border-t border-foreground/5">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/8 px-2.5 py-1 text-[11px]">
-              <Users className="h-3 w-3 text-green-500" />
+              <UsersGroupTwoRounded className="h-3 w-3 text-green-500" />
               <span className="font-semibold text-green-600">{memberCount}</span>
               <span className="text-muted-foreground">member{memberCount !== 1 ? "s" : ""}</span>
             </span>
@@ -279,14 +287,14 @@ export function SpaceCard({ space, strengthCount = 0, ownerName }: SpaceCardProp
               {isPrivate ? (
                 <Lock className="h-2.5 w-2.5" />
               ) : (
-                <Globe className="h-2.5 w-2.5" />
+                <Earth className="h-2.5 w-2.5" />
               )}
               <span className="font-medium">{isPrivate ? "Private" : "Open"}</span>
             </span>
 
             {strengthCount > 0 && (
               <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-pink-500 font-medium">
-                <Sparkles className="h-2.5 w-2.5" />
+                <Stars className="h-2.5 w-2.5" />
                 Active support
               </span>
             )}

@@ -17,7 +17,7 @@ export default async function NotificationsPage() {
 
   return (
     <>
-      <TopBar title="Notifications" showCreate={false} />
+      <TopBar title="Notifications" showCreate={false} showBack />
       <div className="max-w-4xl mx-auto px-4 py-6">
         <NotificationList notifications={notifications ?? []} />
       </div>

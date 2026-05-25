@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft, Users, Target, Crown } from "lucide-react"
+import { ArrowLeft, UsersGroupTwoRounded, Target, Crown } from "@solar-icons/react"
 import { Badge } from "@/components/ui/badge"
 
 interface SpaceHeaderProps {
@@ -11,6 +11,7 @@ interface SpaceHeaderProps {
   memberCount: number
   itemCount: number
   isOwner: boolean
+  ownerName?: string
 }
 
 export function SpaceHeader({
@@ -20,6 +21,7 @@ export function SpaceHeader({
   memberCount,
   itemCount,
   isOwner,
+  ownerName,
 }: SpaceHeaderProps) {
   return (
     <div className="space-y-4">
@@ -45,6 +47,11 @@ export function SpaceHeader({
                 </Badge>
               )}
             </div>
+            {ownerName && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                by <span className="font-medium text-foreground/70">{ownerName}</span>
+              </p>
+            )}
             {description && (
               <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                 {description}
@@ -56,7 +63,7 @@ export function SpaceHeader({
             href={`/spaces/${spaceId}/members`}
             className="relative shrink-0 rounded-xl bg-card ring-1 ring-foreground/10 p-3 transition-all hover:ring-brand/30 hover:shadow-sm group/members"
           >
-            <Users className="h-5 w-5 text-muted-foreground group-hover/members:text-brand transition-colors" />
+            <UsersGroupTwoRounded className="h-5 w-5 text-muted-foreground group-hover/members:text-brand transition-colors" />
             <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-brand text-[10px] font-bold text-white">
               {memberCount}
             </span>

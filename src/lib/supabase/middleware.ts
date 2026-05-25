@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-const publicPaths = ["/", "/auth", "/invite"]
+const publicPaths = ["/", "/auth", "/invite", "/circle-invite"]
 
 function isPublicPath(pathname: string) {
   return publicPaths.some(

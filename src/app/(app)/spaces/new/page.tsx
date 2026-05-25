@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { ArrowLeft, Lock, Users, Sparkles, Loader2 } from "lucide-react"
+import { ArrowLeft, Lock, UsersGroupTwoRounded, Stars, Restart } from "@solar-icons/react"
 
 const visibilityOptions = [
   {
@@ -21,7 +21,7 @@ const visibilityOptions = [
     value: "members_only",
     label: "Members Only",
     description: "Visible to all members, invite to join",
-    icon: Users,
+    icon: UsersGroupTwoRounded,
   },
 ]
 
@@ -96,7 +96,7 @@ export default function NewSpacePage() {
       >
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand mb-3">
-            <Sparkles className="h-3 w-3" />
+            <Stars className="h-3 w-3" />
             New Space
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -196,7 +196,7 @@ export default function NewSpacePage() {
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Restart className="h-4 w-4 animate-spin" />
                 Creating...
               </>
             ) : (

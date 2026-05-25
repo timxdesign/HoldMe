@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Bell, BellOff, Smartphone, Loader2, AlertTriangle } from "lucide-react"
+import { Bell, BellOff, Smartphone, Restart, DangerTriangle } from "@solar-icons/react"
 import { registerServiceWorker } from "@/lib/push/register-sw"
 import {
   subscribeToPush,
@@ -100,7 +100,7 @@ export function NotificationSettings() {
   if (state === "loading") {
     return (
       <div className="flex items-center gap-3 py-2">
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Restart className="h-4 w-4 animate-spin text-muted-foreground" />
         <span className="text-sm text-muted-foreground">Checking notification support...</span>
       </div>
     )
@@ -158,7 +158,7 @@ export function NotificationSettings() {
             disabled={loading}
             className="shrink-0"
           >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Disable"}
+            {loading ? <Restart className="h-3.5 w-3.5 animate-spin" /> : "Disable"}
           </Button>
         ) : (
           <Button
@@ -167,14 +167,14 @@ export function NotificationSettings() {
             disabled={loading}
             className="shrink-0"
           >
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Enable"}
+            {loading ? <Restart className="h-3.5 w-3.5 animate-spin" /> : "Enable"}
           </Button>
         )}
       </div>
 
       {state === "enabled" && (
         <div className="flex items-start gap-2 rounded-lg bg-green-500/10 p-2.5">
-          <AlertTriangle className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
+          <DangerTriangle className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
           <p className="text-[11px] text-green-700 dark:text-green-400">
             Active on this device. You&apos;ll get alerts for strengths received and goal reminders.
           </p>

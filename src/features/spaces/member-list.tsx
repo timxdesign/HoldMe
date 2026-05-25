@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Crown, Users } from "lucide-react"
+import { Crown, UsersGroupTwoRounded } from "@solar-icons/react"
 
 interface Member {
   id: string
@@ -25,7 +25,7 @@ export function MemberList({ members, ownerId }: MemberListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="rounded-full bg-muted p-3 mb-3">
-          <Users className="h-5 w-5 text-muted-foreground" />
+          <UsersGroupTwoRounded className="h-5 w-5 text-muted-foreground" />
         </div>
         <p className="text-sm text-muted-foreground">
           No members yet. Invite someone to hold you accountable!

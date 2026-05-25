@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
-import { LayoutDashboard, Users, AlertTriangle, BarChart3 } from "lucide-react"
+import { Widget, UsersGroupTwoRounded, DangerTriangle, ChartSquare } from "@solar-icons/react"
 
 const adminNavItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/reports", label: "Reports", icon: AlertTriangle },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/admin", label: "Dashboard", icon: Widget },
+  { href: "/admin/users", label: "Users", icon: UsersGroupTwoRounded },
+  { href: "/admin/reports", label: "Reports", icon: DangerTriangle },
+  { href: "/admin/analytics", label: "Analytics", icon: ChartSquare },
 ]
 
 export default async function AdminLayout({

@@ -4,7 +4,7 @@ import { SpaceCard } from "@/features/spaces/space-card"
 import { SpaceTabs } from "@/features/spaces/space-tabs"
 import { FadeIn } from "@/components/ui/fade-in"
 import Link from "next/link"
-import { Plus, Layout, Users, Target } from "lucide-react"
+import { AddCircle, Widget, UsersGroupTwoRounded, Target } from "@solar-icons/react"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
@@ -21,7 +21,7 @@ export default async function SpacesPage() {
   const [{ data: spaces }, { data: strengths }] = await Promise.all([
     supabase
       .from("spaces")
-      .select("*, space_members(count), accountability_items(count), owner:users!owner_id(full_name)")
+      .select("*, space_members(user_id, users(full_name)), accountability_items(count)")
       .order("updated_at", { ascending: false }),
     supabase
       .from("strengths")
@@ -47,7 +47,7 @@ export default async function SpacesPage() {
 
   const totalMembers =
     spaces?.reduce(
-      (sum, s) => sum + (s.space_members?.[0]?.count ?? 0),
+      (sum, s) => sum + (s.space_members?.length ?? 0),
       0
     ) ?? 0
   const totalGoals =
@@ -70,7 +70,7 @@ export default async function SpacesPage() {
             </div>
             <Button asChild className="gap-2 shrink-0">
               <Link href="/spaces/new">
-                <Plus className="h-4 w-4" />
+                <AddCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">New Space</span>
               </Link>
             </Button>
@@ -82,7 +82,7 @@ export default async function SpacesPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-3 md:p-4 flex flex-col items-center text-center gap-2">
                 <div className="rounded-lg bg-brand/10 p-2">
-                  <Layout className="h-4 w-4 text-brand" />
+                  <Widget className="h-4 w-4 text-brand" />
                 </div>
                 <div>
                   <p className="text-lg font-bold leading-tight">{spaces.length}</p>
@@ -91,7 +91,7 @@ export default async function SpacesPage() {
               </div>
               <div className="rounded-xl bg-card ring-1 ring-foreground/10 p-3 md:p-4 flex flex-col items-center text-center gap-2">
                 <div className="rounded-lg bg-green-500/10 p-2">
-                  <Users className="h-4 w-4 text-green-500" />
+                  <UsersGroupTwoRounded className="h-4 w-4 text-green-500" />
                 </div>
                 <div>
                   <p className="text-lg font-bold leading-tight">{totalMembers}</p>
@@ -124,6 +124,7 @@ export default async function SpacesPage() {
                         key={space.id}
                         space={space}
                         strengthCount={strengthsBySpace.get(space.id) ?? 0}
+                        isOwner
                       />
                     ))}
                   </div>
@@ -134,7 +135,7 @@ export default async function SpacesPage() {
                     </p>
                     <Button asChild size="sm" className="gap-2">
                       <Link href="/spaces/new">
-                        <Plus className="h-3.5 w-3.5" />
+                        <AddCircle className="h-3.5 w-3.5" />
                         Create a Space
                       </Link>
                     </Button>
@@ -145,13 +146,15 @@ export default async function SpacesPage() {
                 joinedSpaces.length > 0 ? (
                   <div className="grid gap-3 md:grid-cols-2">
                     {joinedSpaces.map((space) => {
-                      const ownerName = (space.owner as { full_name: string | null } | null)?.full_name ?? undefined
+                      const ownerMember = (space.space_members as { user_id: string; users: { full_name: string | null } | null }[] | null)
+                        ?.find((m) => m.user_id === space.owner_id)
+                      const ownerName = ownerMember?.users?.full_name ?? undefined
                       return (
                         <SpaceCard
                           key={space.id}
                           space={space}
                           strengthCount={strengthsBySpace.get(space.id) ?? 0}
-                          ownerName={ownerName ?? undefined}
+                          ownerName={ownerName}
                         />
                       )
                     })}
@@ -170,7 +173,7 @@ export default async function SpacesPage() {
           <FadeIn delay={200}>
             <div className="text-center py-20 rounded-2xl border border-dashed">
               <div className="rounded-full bg-muted p-4 inline-block mb-4">
-                <Layout className="h-6 w-6 text-muted-foreground" />
+                <Widget className="h-6 w-6 text-muted-foreground" />
               </div>
               <h3 className="font-semibold mb-1">No spaces yet</h3>
               <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
@@ -179,7 +182,7 @@ export default async function SpacesPage() {
               </p>
               <Button asChild className="gap-2">
                 <Link href="/spaces/new">
-                  <Plus className="h-4 w-4" />
+                  <AddCircle className="h-4 w-4" />
                   Create Your First Space
                 </Link>
               </Button>

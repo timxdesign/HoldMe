@@ -12,20 +12,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
-  Plus,
+  AddCircle,
   Target,
   CheckSquare,
   Repeat,
-  Handshake,
-  Loader2,
+  HandShake,
+  Restart,
   ArrowLeft,
   ArrowRight,
-  Sparkles,
-  Check,
+  Stars,
+  CheckCircle,
   Bell,
   BellOff,
-  Clock,
-} from "lucide-react"
+  ClockCircle,
+} from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -65,7 +65,7 @@ const typeOptions = [
     value: "commitment",
     label: "Commitment",
     description: "A promise you're making",
-    icon: Handshake,
+    icon: HandShake,
     color: "text-purple-500",
     bg: "bg-purple-500/10",
     ring: "ring-purple-500",
@@ -202,7 +202,7 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
       <DialogTrigger
         render={<Button size="sm" variant="outline" className="gap-1.5 rounded-lg" />}
       >
-        <Plus className="h-3.5 w-3.5" />
+        <AddCircle className="h-3.5 w-3.5" />
         Add Goal
       </DialogTrigger>
       <DialogContent className="sm:max-w-md overflow-hidden" showCloseButton={!success}>
@@ -332,7 +332,7 @@ function StepType({ type, onSelect }: { type: string; onSelect: (v: string) => v
             {selected && (
               <div className="absolute top-2.5 right-2.5">
                 <div className={cn("rounded-full p-0.5", opt.bg)}>
-                  <Check className={cn("h-3 w-3", opt.color)} />
+                  <CheckCircle className={cn("h-3 w-3", opt.color)} />
                 </div>
               </div>
             )}
@@ -444,7 +444,7 @@ function StepFrequency({ frequency, onSelect }: { frequency: string; onSelect: (
                 selected ? "border-brand bg-brand" : "border-foreground/20"
               )}
             >
-              {selected && <Check className="h-3 w-3 text-white" />}
+              {selected && <CheckCircle className="h-3 w-3 text-white" />}
             </div>
           </button>
         )
@@ -631,7 +631,7 @@ function StepReminder({
           {/* Summary */}
           {times.length > 0 && (
             <div className="rounded-xl bg-brand/5 ring-1 ring-brand/10 px-3.5 py-2.5 flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5 text-brand shrink-0" />
+              <ClockCircle className="h-3.5 w-3.5 text-brand shrink-0" />
               <p className="text-[11px] text-brand font-medium">
                 {isOneTime ? "You'll get a reminder " : "Reminders "}
                 {times.map((t) => presetTimes.find((p) => p.value === t)?.label.toLowerCase() ?? t).join(" & ")}
@@ -696,12 +696,12 @@ function StepNav({
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Restart className="h-4 w-4 animate-spin" />
               Creating...
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4" />
+              <Stars className="h-4 w-4" />
               Create Goal
             </>
           )}
@@ -733,9 +733,9 @@ function SuccessView({ reminderEnabled }: { reminderEnabled: boolean }) {
     >
       <div className="relative mb-4">
         <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-          <Check className="h-8 w-8 text-green-500" />
+          <CheckCircle className="h-8 w-8 text-green-500" />
         </div>
-        <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-500 animate-pulse" />
+        <Stars className="absolute -top-1 -right-1 h-5 w-5 text-yellow-500 animate-pulse" />
       </div>
       <h3 className="text-lg font-bold">Goal created!</h3>
       <p className="text-sm text-muted-foreground mt-1">

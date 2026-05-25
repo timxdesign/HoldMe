@@ -55,6 +55,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
   const memberNameMap = Object.fromEntries(
     (members ?? []).map((m) => [m.user_id, (m.users as { full_name: string | null } | null)?.full_name ?? "Someone"])
   )
+  const ownerName = !isOwner ? memberNameMap[space.owner_id] ?? undefined : undefined
   const memberNameLookup = new Map(Object.entries(memberNameMap))
 
   const lastCheckinMap: Record<string, string> = {}
@@ -81,6 +82,7 @@ export default async function SpacePage({ params }: SpacePageProps) {
         memberCount={memberCount}
         itemCount={itemCount}
         isOwner={isOwner}
+        ownerName={ownerName}
       />
 
       {strengthsWithItems.length > 0 && (

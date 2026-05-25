@@ -1,22 +1,22 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
-  Check,
+  CheckCircle,
   Heart,
   Target,
-  Clock,
-  Loader2,
-  Sparkles,
-  MoreHorizontal,
-  Trash2,
-  Pencil,
+  ClockCircle,
+  Restart,
+  Stars,
+  MenuDots,
+  TrashBinTrash,
+  Pen2,
   Pause,
   Play,
   Bell,
-} from "lucide-react"
+} from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { ReminderSettings } from "./reminder-settings"
@@ -101,8 +101,6 @@ const frequencyLabels: Record<string, string> = {
   one_time: "Once",
 }
 
-type FilterTab = "all" | "mine" | "partners"
-
 export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, memberNames, lastCheckins = {} }: ItemListProps) {
   const [localItems, setLocalItems] = useState(items)
   const [sendingStrength, setSendingStrength] = useState<string | null>(null)
@@ -110,7 +108,6 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   const [receivedFlash, setReceivedFlash] = useState<Map<string, string>>(new Map())
   const [checkedIn, setCheckedIn] = useState<Set<string>>(new Set())
   const [localCheckins, setLocalCheckins] = useState<Record<string, string>>(lastCheckins)
-  const [filter, setFilter] = useState<FilterTab>("all")
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
@@ -118,14 +115,6 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   const [savingEdit, setSavingEdit] = useState(false)
   const [expandedRemindersId, setExpandedRemindersId] = useState<string | null>(null)
   const supabase = createClient()
-
-  const hasPartnerItems = localItems.some((item) => item.user_id !== currentUserId)
-
-  const filteredItems = useMemo(() => {
-    if (filter === "mine") return localItems.filter((i) => i.user_id === currentUserId)
-    if (filter === "partners") return localItems.filter((i) => i.user_id !== currentUserId)
-    return localItems
-  }, [localItems, filter, currentUserId])
 
   const handleRealtimeStrength = useCallback(
     (payload: { new: { item_id: string; sender_id: string } }) => {
@@ -316,28 +305,9 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   }
 
   return (
-    <div className="space-y-3">
-      {hasPartnerItems && (
-        <div className="flex items-center gap-5">
-          {(["all", "mine", "partners"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={cn(
-                "text-[11px] font-semibold uppercase tracking-widest pb-1 transition-colors",
-                filter === tab
-                  ? "text-foreground border-b-2 border-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {tab === "all" ? "All" : tab === "mine" ? "Mine" : "Partners"}
-            </button>
-          ))}
-        </div>
-      )}
-
+    <div>
       <div className="rounded-2xl bg-card ring-1 ring-foreground/10 overflow-hidden divide-y divide-foreground/5">
-        {filteredItems.map((item) => {
+        {localItems.map((item) => {
           const isOwn = item.user_id === currentUserId
           const justSent = sentStrength === item.id
           const justCheckedIn = checkedIn.has(item.id)
@@ -389,7 +359,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                           : "ring-[1.5px] ring-foreground/25 hover:ring-foreground/50 active:scale-90"
                     )}
                   >
-                    {isChecked && <Check className="h-3 w-3 text-background" strokeWidth={3} />}
+                    {isChecked && <CheckCircle className="h-3 w-3 text-background" />}
                     {isPaused && <Pause className="h-2.5 w-2.5 text-muted-foreground" />}
                   </button>
                 ) : (
@@ -399,7 +369,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                     className="shrink-0 h-[22px] w-[22px] rounded-full flex items-center justify-center transition-all duration-300 active:scale-90"
                   >
                     {sendingStrength === item.id ? (
-                      <Loader2 className="h-3.5 w-3.5 text-pink-400 animate-spin" />
+                      <Restart className="h-3.5 w-3.5 text-pink-400 animate-spin" />
                     ) : (
                       <Heart
                         className={cn(
@@ -434,7 +404,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                 <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
                   {isOwn && (onCooldown || justCheckedIn) ? (
                     <span className="flex items-center gap-1 text-foreground/60">
-                      <Clock className="h-3 w-3" />
+                      <ClockCircle className="h-3 w-3" />
                       {cooldownLabel || "done"}
                     </span>
                   ) : isPaused ? (
@@ -447,11 +417,11 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                 {isOwn && (
                   <DropdownMenu>
                     <DropdownMenuTrigger className="shrink-0 p-1 -mr-1 rounded-lg text-muted-foreground/40 hover:text-foreground transition-colors data-popup-open:text-foreground">
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MenuDots className="h-4 w-4" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
                       <DropdownMenuItem onClick={() => startEditing(item)}>
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pen2 className="h-3.5 w-3.5" />
                         Edit
                       </DropdownMenuItem>
                       {item.status === "active" && (
@@ -493,9 +463,9 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                         disabled={deletingId === item.id}
                       >
                         {deletingId === item.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Restart className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <TrashBinTrash className="h-3.5 w-3.5" />
                         )}
                         {deletingId === item.id ? "Deleting..." : "Delete"}
                       </DropdownMenuItem>
@@ -529,9 +499,9 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                         className="h-8 text-xs rounded-lg gap-1.5"
                       >
                         {savingEdit ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <Restart className="h-3 w-3 animate-spin" />
                         ) : (
-                          <Check className="h-3 w-3" />
+                          <CheckCircle className="h-3 w-3" />
                         )}
                         {savingEdit ? "Saving..." : "Save"}
                       </Button>
@@ -560,16 +530,6 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
           )
         })}
       </div>
-
-      {filteredItems.length === 0 && (
-        <div className="flex flex-col items-center py-10 text-center">
-          <p className="text-sm text-muted-foreground">
-            {filter === "mine"
-              ? "You haven't added any goals yet."
-              : "No partner goals in this space yet."}
-          </p>
-        </div>
-      )}
     </div>
   )
 }

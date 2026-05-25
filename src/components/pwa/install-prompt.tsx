@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { X, Download, Share, Plus, Smartphone } from "lucide-react"
+import { CloseSquare, Download, Share, AddCircle, Smartphone } from "@solar-icons/react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -98,7 +98,7 @@ export function PwaInstallPrompt() {
             onClick={handleDismiss}
             className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-muted transition-colors"
           >
-            <X className="h-4 w-4 text-muted-foreground" />
+            <CloseSquare className="h-4 w-4 text-muted-foreground" />
           </button>
 
           <div className="p-5 space-y-4">
@@ -146,7 +146,7 @@ export function PwaInstallPrompt() {
                 onClick={() => setShowIosGuide(true)}
                 className="w-full gap-2 rounded-xl h-11"
               >
-                <Plus className="h-4 w-4" />
+                <AddCircle className="h-4 w-4" />
                 Add to Home Screen
               </Button>
             )}
@@ -187,7 +187,7 @@ export function PwaInstallPrompt() {
                   />
                   <Step
                     number={2}
-                    icon={<Plus className="h-4 w-4" />}
+                    icon={<AddCircle className="h-4 w-4" />}
                     title='Tap "Add to Home Screen"'
                     description="Scroll down in the share menu to find it"
                   />

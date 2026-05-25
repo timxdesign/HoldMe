@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { MemberList } from "@/features/spaces/member-list"
 import { InviteButton } from "@/features/spaces/invite-button"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft } from "@solar-icons/react"
 
 interface MembersPageProps {
   params: Promise<{ id: string }>

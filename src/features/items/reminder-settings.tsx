@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Bell, BellOff, Loader2, Check } from "lucide-react"
+import { Bell, BellOff, Restart, CheckCircle } from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -158,9 +158,9 @@ export function ReminderSettings({ itemId, currentSchedule }: ReminderSettingsPr
             className="gap-1.5 h-8 text-xs"
           >
             {saving ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Restart className="h-3 w-3 animate-spin" />
             ) : saved ? (
-              <Check className="h-3 w-3" />
+              <CheckCircle className="h-3 w-3" />
             ) : null}
             {saving ? "Saving..." : saved ? "Saved" : "Save reminders"}
           </Button>

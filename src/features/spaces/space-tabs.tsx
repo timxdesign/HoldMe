@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Crown, Users } from "lucide-react"
+import { Crown, UsersGroupTwoRounded } from "@solar-icons/react"
 import { cn } from "@/lib/utils"
 
 interface SpaceTabsProps {
@@ -48,7 +48,7 @@ export function SpaceTabs({ myCount, joinedCount, myContent, joinedContent }: Sp
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <Users className="h-3 w-3" />
+          <UsersGroupTwoRounded className="h-3 w-3" />
           Joined
           <span
             className={cn(

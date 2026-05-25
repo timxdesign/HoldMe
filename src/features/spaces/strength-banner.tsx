@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Heart, X, ChevronDown, ChevronUp } from "lucide-react"
+import { Heart, CloseSquare, AltArrowDown, AltArrowUp } from "@solar-icons/react"
 import { formatDistanceToNow } from "date-fns"
 
 interface StrengthItem {
@@ -39,7 +39,7 @@ export function StrengthBanner({ strengths }: StrengthBannerProps) {
         onClick={() => setDismissed(true)}
         className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
       >
-        <X className="h-3.5 w-3.5" />
+        <CloseSquare className="h-3.5 w-3.5" />
       </button>
 
       <div className="flex items-start gap-3">
@@ -64,11 +64,11 @@ export function StrengthBanner({ strengths }: StrengthBannerProps) {
               >
                 {expanded ? (
                   <>
-                    <ChevronUp className="h-3 w-3" /> Hide
+                    <AltArrowUp className="h-3 w-3" /> Hide
                   </>
                 ) : (
                   <>
-                    <ChevronDown className="h-3 w-3" /> Show {strengths.length - 1} more
+                    <AltArrowDown className="h-3 w-3" /> Show {strengths.length - 1} more
                   </>
                 )}
               </button>

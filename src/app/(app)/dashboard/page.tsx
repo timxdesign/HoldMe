@@ -5,7 +5,7 @@ import { ActivityFeed } from "@/features/activity/activity-feed"
 import { PerformanceSummary } from "@/features/dashboard/performance-summary"
 import { StatCards } from "@/features/dashboard/stat-cards"
 import Link from "next/link"
-import { Plus, ArrowRight } from "lucide-react"
+import { AddCircle, ArrowRight } from "@solar-icons/react"
 
 export const metadata = {
   title: "Dashboard",
@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       .single(),
     supabase
       .from("spaces")
-      .select("*, space_members(count), accountability_items(count)")
+      .select("*, space_members(user_id, users(full_name)), accountability_items(count)")
       .order("updated_at", { ascending: false })
       .limit(5),
     supabase
@@ -104,72 +104,82 @@ export default async function DashboardPage() {
   return (
     <>
       <TopBar title="Dashboard" showCreate={false} />
-      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-8">
-        <PerformanceSummary
-          firstName={firstName}
-          completedCount={completedCount}
-          totalCheckins={totalCheckins}
-          streak={streak}
-          strengthsReceived={strengthsReceived}
-          activeGoals={activeGoals}
-        />
+      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6">
+        <div className="space-y-3">
+          <PerformanceSummary
+            firstName={firstName}
+            completedCount={completedCount}
+            totalCheckins={totalCheckins}
+            streak={streak}
+            strengthsReceived={strengthsReceived}
+            activeGoals={activeGoals}
+          />
 
-        <StatCards
-          streak={streak}
-          completionRate={completionRate}
-          activeGoals={activeGoals}
-          strengthsReceived={strengthsReceived}
-        />
+          <StatCards
+            streak={streak}
+            completionRate={completionRate}
+            activeGoals={activeGoals}
+            strengthsReceived={strengthsReceived}
+          />
+        </div>
 
-        <div className="grid md:grid-cols-5 gap-6 md:gap-8">
-          <section className="md:col-span-3 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Your Spaces</h2>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold">Your Spaces</h2>
+            <Link
+              href="/spaces/new"
+              className="flex items-center gap-1 text-sm text-brand font-medium hover:underline"
+            >
+              <AddCircle className="h-3.5 w-3.5" />
+              New space
+            </Link>
+          </div>
+
+          {spaces && spaces.length > 0 ? (
+            <div className="grid gap-3">
+              {spaces.map((space) => {
+                const isSpaceOwner = space.owner_id === authUser?.id
+                const ownerMember = !isSpaceOwner
+                  ? (space.space_members as { user_id: string; users: { full_name: string | null } | null }[] | null)
+                      ?.find((m) => m.user_id === space.owner_id)
+                  : undefined
+                const ownerName = ownerMember?.users?.full_name ?? undefined
+                return (
+                  <SpaceCard key={space.id} space={space} ownerName={ownerName} isOwner={isSpaceOwner} />
+                )
+              })}
+              {spaces.length >= 5 && (
+                <Link
+                  href="/spaces"
+                  className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground py-3 rounded-xl border border-dashed transition-colors hover:border-brand/30"
+                >
+                  View all spaces
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12 rounded-xl border border-dashed">
+              <p className="text-muted-foreground mb-3 text-sm">
+                No spaces yet. Create your first accountability space!
+              </p>
               <Link
                 href="/spaces/new"
-                className="flex items-center gap-1 text-sm text-brand font-medium hover:underline"
+                className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
               >
-                <Plus className="h-3.5 w-3.5" />
-                New space
+                <AddCircle className="h-4 w-4" />
+                Create space
               </Link>
             </div>
+          )}
+        </section>
 
-            {spaces && spaces.length > 0 ? (
-              <div className="grid gap-3">
-                {spaces.map((space) => (
-                  <SpaceCard key={space.id} space={space} />
-                ))}
-                {spaces.length >= 5 && (
-                  <Link
-                    href="/spaces"
-                    className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground py-3 rounded-xl border border-dashed transition-colors hover:border-brand/30"
-                  >
-                    View all spaces
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12 rounded-xl border border-dashed">
-                <p className="text-muted-foreground mb-3 text-sm">
-                  No spaces yet. Create your first accountability space!
-                </p>
-                <Link
-                  href="/spaces/new"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create space
-                </Link>
-              </div>
-            )}
-          </section>
-
-          <section className="md:col-span-2 space-y-4">
+        {recentCheckins && recentCheckins.length > 0 && (
+          <section className="space-y-3">
             <h2 className="text-base font-semibold">Recent Activity</h2>
-            <ActivityFeed checkins={recentCheckins ?? []} />
+            <ActivityFeed checkins={recentCheckins} />
           </section>
-        </div>
+        )}
       </div>
     </>
   )

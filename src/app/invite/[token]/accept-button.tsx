@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Check, Sparkles, ArrowRight } from "lucide-react"
+import { CheckCircle, Stars, ArrowRight } from "@solar-icons/react"
 
 interface AcceptInviteButtonProps {
   inviteId: string
@@ -58,7 +58,7 @@ export function AcceptInviteButton({
       <div className="space-y-3">
         <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 text-center animate-in fade-in zoom-in-95 duration-300">
           <div className="mx-auto w-10 h-10 rounded-full bg-green-500 flex items-center justify-center mb-3">
-            <Check className="h-5 w-5 text-white" />
+            <CheckCircle className="h-5 w-5 text-white" />
           </div>
           <p className="text-sm font-semibold text-green-700 dark:text-green-400">
             You&apos;re in!
@@ -85,7 +85,7 @@ export function AcceptInviteButton({
           </>
         ) : (
           <>
-            <Sparkles className="h-4 w-4 transition-transform group-hover:scale-110" />
+            <Stars className="h-4 w-4 transition-transform group-hover:scale-110" />
             Join this space
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </>

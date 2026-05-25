@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { formatDistanceToNow } from "date-fns"
-import { Heart, MessageCircle, Clock, UserPlus, CheckCircle2, AlertCircle } from "lucide-react"
+import { Heart, ChatRound, ClockCircle, UserPlus, CheckCircle, DangerCircle } from "@solar-icons/react"
 import { cn } from "@/lib/utils"
 
 interface Notification {
@@ -21,11 +21,11 @@ interface NotificationListProps {
 
 const typeIcons = {
   strength: Heart,
-  comment: MessageCircle,
-  reminder: Clock,
+  comment: ChatRound,
+  reminder: ClockCircle,
   invite: UserPlus,
-  checkin: CheckCircle2,
-  missed: AlertCircle,
+  checkin: CheckCircle,
+  missed: DangerCircle,
 }
 
 const typeColors = {
@@ -63,7 +63,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
     <div className="space-y-1">
       {items.map((notification) => {
         const Icon =
-          typeIcons[notification.type as keyof typeof typeIcons] ?? Clock
+          typeIcons[notification.type as keyof typeof typeIcons] ?? ClockCircle
         const color =
           typeColors[notification.type as keyof typeof typeColors] ??
           "text-muted-foreground"

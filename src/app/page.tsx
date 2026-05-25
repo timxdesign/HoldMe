@@ -2,18 +2,18 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Heart,
-  Users,
+  UsersGroupTwoRounded,
   Target,
   Bell,
   ArrowRight,
-  Zap,
+  Bolt,
   Shield,
-  Sparkles,
-  CheckCircle2,
+  Stars,
+  CheckCircle,
   Star,
-  Quote,
-  X,
-} from "lucide-react"
+  ChatRoundDots,
+  CloseSquare,
+} from "@solar-icons/react"
 import {
   FadeIn,
   StaggerChildren,
@@ -55,7 +55,7 @@ export default function LandingPage() {
           <div className="relative max-w-5xl mx-auto px-4 pt-16 pb-24 md:pt-20 md:pb-32 text-center space-y-10">
             <FadeIn delay={100} direction="none" duration={800}>
               <div className="inline-flex items-center gap-2 rounded-full bg-brand/8 border border-brand/10 px-4 py-1.5 text-xs font-medium text-brand backdrop-blur-sm">
-                <Sparkles className="h-3.5 w-3.5" />
+                <Stars className="h-3.5 w-3.5" />
                 Accountability, reimagined
               </div>
             </FadeIn>
@@ -108,7 +108,7 @@ export default function LandingPage() {
             <FadeIn delay={1100} duration={600}>
               <div className="flex items-center justify-center gap-5 sm:gap-8 pt-4 text-[13px] text-muted-foreground/60">
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500/70" />
+                  <CheckCircle className="h-3.5 w-3.5 text-green-500/70" />
                   Free forever
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -249,8 +249,8 @@ export default function LandingPage() {
             <FadeIn duration={1000}>
               <blockquote className="space-y-6">
                 <p className="text-2xl sm:text-3xl md:text-4xl font-light leading-snug tracking-tight text-foreground/80">
-                  &ldquo;The difference between giving up and keeping going
-                  <span className="italic font-normal text-foreground"> is almost always another person.&rdquo;</span>
+                  &ldquo;Most times, the difference between giving up and holding on
+                  <span className="italic font-normal text-foreground"> is having one person who refuses to let you quit.&rdquo;</span>
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <div className="h-px w-8 bg-foreground/10" />
@@ -370,7 +370,7 @@ export default function LandingPage() {
                 description="Track daily rituals, weekly targets, or life-changing commitments. Your pace, your way."
               />
               <FeatureCard
-                icon={<Users className="h-5 w-5" />}
+                icon={<UsersGroupTwoRounded className="h-5 w-5" />}
                 gradient="from-purple-500/10 to-indigo-500/10"
                 iconColor="text-purple-500"
                 title="Private Spaces"
@@ -391,7 +391,7 @@ export default function LandingPage() {
                 description="Morning, evening, weekdays — you choose when. Nudges, not nagging."
               />
               <FeatureCard
-                icon={<Zap className="h-5 w-5" />}
+                icon={<Bolt className="h-5 w-5" />}
                 gradient="from-yellow-500/10 to-orange-400/10"
                 iconColor="text-yellow-600"
                 title="Push Notifications"
@@ -478,19 +478,19 @@ export default function LandingPage() {
                   </h3>
                   <ul className="space-y-4 text-sm text-muted-foreground/70">
                     <li className="flex items-start gap-3">
-                      <X className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
+                      <CloseSquare className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
                       Streaks that cause anxiety when broken
                     </li>
                     <li className="flex items-start gap-3">
-                      <X className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
+                      <CloseSquare className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
                       Public leaderboards and social pressure
                     </li>
                     <li className="flex items-start gap-3">
-                      <X className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
+                      <CloseSquare className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
                       Gamification that fades after two weeks
                     </li>
                     <li className="flex items-start gap-3">
-                      <X className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
+                      <CloseSquare className="shrink-0 mt-0.5 h-4 w-4 text-foreground/20" />
                       Solo experience with no real support
                     </li>
                   </ul>
@@ -504,19 +504,19 @@ export default function LandingPage() {
                   </h3>
                   <ul className="space-y-4 text-sm">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
+                      <CheckCircle className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
                       Encouragement-first — no punishment for off days
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
+                      <CheckCircle className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
                       Private spaces with people who know your story
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
+                      <CheckCircle className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
                       Human support that compounds over time
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
+                      <CheckCircle className="shrink-0 mt-0.5 h-4 w-4 text-brand" />
                       Built for lasting change, not dopamine hits
                     </li>
                   </ul>
@@ -676,11 +676,11 @@ function TestimonialCard({
     <div className="group rounded-2xl bg-card ring-1 ring-foreground/[0.06] p-6 space-y-5 flex flex-col transition-all duration-500 hover:ring-foreground/10 hover:shadow-xl hover:shadow-black/[0.03] hover:-translate-y-1">
       <div className="flex items-center gap-0.5">
         {[...Array(5)].map((_, i) => (
-          <Star key={i} className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+          <Star key={i} className="h-3.5 w-3.5 text-yellow-500" />
         ))}
       </div>
       <div className="flex-1">
-        <Quote className="h-4 w-4 text-muted-foreground/20 mb-3" />
+        <ChatRoundDots className="h-4 w-4 text-muted-foreground/20 mb-3" />
         <p className="text-sm leading-relaxed font-light">{quote}</p>
       </div>
       <div className="flex items-center gap-3 pt-3 border-t border-foreground/[0.04]">

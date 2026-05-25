@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Zap } from "lucide-react"
+import { Bolt } from "@solar-icons/react"
 
 function playZapSound() {
   try {
@@ -165,7 +165,7 @@ export function StrengthEffect() {
           style={{ animation: "badge-enter 1.8s ease-out forwards" }}
         >
           <div className="rounded-full bg-yellow-400/20 p-1.5">
-            <Zap className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+            <Bolt className="h-5 w-5 text-yellow-400 fill-yellow-400" />
           </div>
           <div>
             <p className="text-sm font-bold">{senderName} sent you strength!</p>

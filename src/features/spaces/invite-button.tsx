@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { UserPlus, Copy, Check, Mail, Link as LinkIcon, Loader2 } from "lucide-react"
+import { UserPlus, Copy, CheckCircle, Letter, Link as LinkIcon, Restart } from "@solar-icons/react"
 import { toast } from "sonner"
 
 interface InviteButtonProps {
@@ -150,9 +150,9 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
                 disabled={loading || !email.trim()}
               >
                 {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Restart className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Mail className="h-4 w-4" />
+                  <Letter className="h-4 w-4" />
                 )}
                 {loading ? "Sending..." : "Send Email Invite"}
               </Button>
@@ -174,7 +174,7 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
               disabled={loading}
             >
               {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Restart className="h-4 w-4 animate-spin" />
               ) : (
                 <LinkIcon className="h-4 w-4" />
               )}
@@ -185,7 +185,7 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
           <div className="space-y-4">
             {emailSent && (
               <div className="rounded-xl bg-green-500/10 p-3 text-center">
-                <Mail className="h-5 w-5 text-green-600 mx-auto mb-1.5" />
+                <Letter className="h-5 w-5 text-green-600 mx-auto mb-1.5" />
                 <p className="text-sm font-medium text-green-700 dark:text-green-400">
                   Invite sent!
                 </p>
@@ -200,7 +200,7 @@ export function InviteButton({ spaceId }: InviteButtonProps) {
               <div className="flex gap-2">
                 <Input value={inviteLink} readOnly className="text-xs h-10" />
                 <Button size="icon" variant="outline" onClick={handleCopy} className="h-10 w-10 shrink-0">
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>

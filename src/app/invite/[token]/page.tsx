@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { AcceptInviteButton } from "./accept-button"
 import { InviteIllustration } from "./illustration"
-import { Shield, LinkIcon } from "lucide-react"
+import { Shield, Link as LinkIcon } from "@solar-icons/react"
 
 interface InvitePageProps {
   params: Promise<{ token: string }>

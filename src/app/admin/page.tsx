@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Users, Layout, CheckCircle2, Heart } from "lucide-react"
+import { UsersGroupTwoRounded, Widget, CheckCircle, Heart } from "@solar-icons/react"
 
 export const metadata = {
   title: "Admin Dashboard",
@@ -22,9 +22,9 @@ export default async function AdminDashboardPage() {
   ])
 
   const stats = [
-    { label: "Total Users", value: userCount ?? 0, icon: Users },
-    { label: "Active Spaces", value: spaceCount ?? 0, icon: Layout },
-    { label: "Check-ins", value: checkinCount ?? 0, icon: CheckCircle2 },
+    { label: "Total Users", value: userCount ?? 0, icon: UsersGroupTwoRounded },
+    { label: "Active Spaces", value: spaceCount ?? 0, icon: Widget },
+    { label: "Check-ins", value: checkinCount ?? 0, icon: CheckCircle },
     { label: "Strengths Sent", value: strengthCount ?? 0, icon: Heart },
   ]
 

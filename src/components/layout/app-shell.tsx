@@ -2,15 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Layout, Bell, User, Settings } from "lucide-react"
+import { Home, Widget, Record, User, Settings } from "@solar-icons/react"
 import { cn } from "@/lib/utils"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { StrengthEffect } from "@/components/effects/strength-effect"
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/spaces", label: "Spaces", icon: Layout },
-  { href: "/notifications", label: "Alerts", icon: Bell },
+  { href: "/spaces", label: "Spaces", icon: Widget },
+  { href: "/circles", label: "Circles", icon: Record },
   { href: "/profile", label: "Profile", icon: User },
 ]
 
