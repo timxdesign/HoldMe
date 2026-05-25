@@ -47,23 +47,23 @@ HoldMe solves this by creating:
 
 Users create accountability spaces where they:
 
-* Add goals/tasks/habits
+* Add goals/tasks/habits/commitments
 * Define reminders/check-in frequency
 * Invite accountability partners
-* Receive encouragement
-* Track progress
-* Stay consistent through social support
+* Receive encouragement ("Send Strength")
+* Track progress with frequency-gated check-ins
+* Stay consistent through social support and push notifications
 
 Example:
 A user creates a space called:
-“30 Day Discipline Challenge”
+"30 Day Discipline Challenge"
 
 Inside the space:
 
-* Wake up at 5AM
-* Gym 4x weekly
-* Post content daily
-* Read 10 pages daily
+* Wake up at 5AM (habit, daily)
+* Gym 4x weekly (goal, weekly)
+* Post content daily (habit, daily)
+* Read 10 pages daily (habit, daily)
 
 They invite:
 
@@ -76,7 +76,7 @@ They invite:
 Partners can:
 
 * View allowed items
-* Send encouragement (“Send Strength”)
+* Send encouragement ("Send Strength") with real-time lightning effects
 * Comment/check in
 * Monitor consistency
 
@@ -152,40 +152,80 @@ Avoid:
 * Heavy dashboards
 * Dark productivity aesthetics
 
+## Design System (Implemented)
+
+* Rounded-2xl cards with ring-1 borders and hover shadow/lift effects
+* Gradient accent bars per item type (blue for goals, green for habits, orange for tasks, purple for commitments)
+* Colored status/frequency/type pills with dot indicators
+* Ambient gradient blobs on hero sections
+* Slide-in animations (animate-in, fade-in, slide-in-from-*)
+* Floating dropdown menus for edit/delete actions
+* Inline edit forms that expand in-place
+* Filter tab controls (pill-style segmented buttons)
+* Avatar initials with gradient backgrounds for partner items
+
 ---
 
 # Branding
 
 ## Primary Color
 
-#1E96FC
+#1E96FC (brand blue)
 
 ## Secondary Color
 
-#FC851D
+#FC851D (brand orange, used for strengths)
+
+## Strength Color
+
+#EC4899 (pink-500, used for Send Strength, heart effects)
 
 ## Typeface
 
-DM Sans
+DM Sans (variable font, loaded locally)
 
 ---
 
 # Platform Deliverables
 
-## 1. End User Web App
+## 1. End User Web App (Implemented)
 
-Responsive web application for users.
+Responsive web application built as a PWA.
 
-## 2. Admin Dashboard
+* Landing page with hero, social proof, how-it-works, features, testimonials, comparison, and CTA sections
+* Full authentication flow (Email OTP + Google OAuth)
+* Dashboard with performance summary, stat cards, spaces list, and activity feed
+* Spaces management with My Spaces / Joined tabs
+* Space detail pages with goal items, strength banners, and real-time updates
+* Profile page with avatar upload, bio, interests, stats grid, and activity summary
+* Settings page with push notification management
+* Notifications page with real-time alerts
+* Admin dashboard with user management, analytics, and reports
 
-Administrative management dashboard.
+## 2. Admin Dashboard (Implemented)
+
+Administrative management dashboard at /admin.
 
 * User management system
-* Dashboard analysis
+* Analytics dashboard
+* Reports and moderation
 
-## 3. Push Notification System
+## 3. Push Notification System (Implemented)
 
-For engagement and reminders.
+Native Web Push notifications for engagement and reminders.
+
+* Works even when the browser tab is closed or phone is locked
+* Delivers strength notifications and goal reminders
+* Service worker handles push display and click routing
+
+## 4. PWA Install Prompt (Implemented)
+
+Prompts mobile users to install the app.
+
+* Android: intercepts beforeinstallprompt, triggers native Chrome install dialog
+* iOS: step-by-step Add to Home Screen guide with Safari share instructions
+* Dismisses for 7 days via localStorage
+* Explains that push notifications require installation (iOS)
 
 ---
 
@@ -193,10 +233,12 @@ For engagement and reminders.
 
 ## Frontend
 
-* Next.js (App Router)
-* TypeScript
-* TailwindCSS
-* ShadCN UI
+* Next.js 16 (App Router, server/client components)
+* TypeScript (strict mode)
+* Tailwind CSS v4 with CSS variables
+* shadcn/ui components (built on @base-ui/react primitives)
+* tw-animate-css for animations
+* DM Sans variable font (loaded locally via next/font)
 
 ## Backend
 
@@ -204,13 +246,33 @@ For engagement and reminders.
 
 Services include:
 
-* Authentication
+* Authentication (Email OTP + Google OAuth)
 * PostgreSQL Database
-* Realtime
-* Row Level Security
-* Storage
-* Edge Functions
-* Push Notification Support
+* Realtime (for in-app notifications and strength reactions)
+* Row Level Security (RLS on all tables)
+* Storage (avatar uploads)
+* Edge Functions (Deno runtime, for push delivery)
+* pg_net (for database webhook HTTP calls)
+* pg_cron (for scheduled reminder processing)
+
+## Push Notification Pipeline
+
+```
+[Strength sent] -> handle_new_strength() trigger -> INSERT notifications
+                                                        |
+                                               notify_push_on_insert() trigger
+                                                        |
+                                               pg_net HTTP POST -> Edge Function: send-push
+                                                        |
+                                               Web Push API -> Browser -> Service Worker -> Native notification
+
+[Reminder due]  -> pg_cron (every minute) -> process_reminders() -> INSERT notifications -> same pipeline
+```
+
+* VAPID JWT signing (ES256) via crypto.subtle in Deno
+* RFC 8291 Web Push payload encryption (ECDH + HKDF + AES-128-GCM) natively in Deno
+* No npm web-push dependency (doesn't work in Deno)
+* Edge Function cleans up expired/gone subscriptions automatically
 
 ## Hosting
 
@@ -224,12 +286,12 @@ Services include:
 
 # Mobile Responsiveness
 
-The platform must be:
+The platform is:
 
 * 100% mobile responsive
 * Mobile-first
 * Tablet optimized
-* Desktop optimized
+* Desktop optimized (sidebar nav on md+, bottom nav on mobile)
 
 Primary usage is expected from mobile devices.
 
@@ -239,8 +301,8 @@ Primary usage is expected from mobile devices.
 
 ## Supported Auth
 
-* Email OTP
-* Google Login
+* Email OTP (magic link / one-time password)
+* Google Login (OAuth)
 
 Optional future:
 
@@ -248,56 +310,47 @@ Optional future:
 
 ---
 
-# Core Features
+# Core Features (Implemented)
 
-# 1. User Onboarding
-
-Users should be able to:
-
-* Create account
-* Setup profile
-* Upload avatar
-* Add short bio
-* Select accountability interests
-
----
-
-# 2. Accountability Spaces
+## 1. User Onboarding
 
 Users can:
 
-* Create spaces
-* Name spaces
-* Add descriptions
-* Set visibility/privacy
-* Invite users
+* Create account via Email OTP or Google OAuth
+* Setup profile (full name, avatar, bio, interests)
+* Upload avatar to Supabase Storage
+* Select accountability interests from 10 categories with emoji icons
+* View stats (goals created, completion rate, strengths sent/received)
 
-Example:
+## 2. Accountability Spaces
 
-* Fitness Accountability
-* Faith Journey
-* Content Challenge
-* Study Accountability
+Users can:
 
----
+* Create spaces with name, description, and visibility settings
+* View spaces in tabbed interface (My Spaces / Joined)
+* See owner name on joined space cards with avatar initial
+* Edit space name and description inline via floating dropdown menu
+* Delete spaces via floating dropdown menu
+* See colored stat pills (members in green, goals in orange, visibility badge)
+* Gradient accent bars: blue for owned spaces, purple for joined spaces
 
-# 3. Accountability Items
+## 3. Accountability Items (Goals)
 
-Inside spaces users can create:
+Inside spaces users can create via 4-step wizard:
 
-* Goals
-* Tasks
-* Habits
-* Commitments
+* Step 1: Select type (Goal, Habit, Task, Commitment) with colored icon cards
+* Step 2: Title (80 char max with counter) and optional description
+* Step 3: Frequency (Daily, Weekly, Monthly, One-time) with radio cards
+* Step 4: Reminder configuration (toggle, time presets with emoji, day picker with quick-select)
 
 Each item includes:
 
-* Title
-* Description
-* Frequency
-* Reminder schedule
-* Due date (if any)
-* Progress status
+* Title and description
+* Type (goal/habit/task/commitment) with distinct color and icon
+* Frequency (daily/weekly/monthly/one_time)
+* Reminder schedule (jsonb: enabled, times[], timezone, days[])
+* Status tracking
+* Inline edit and delete via floating dropdown menu
 
 Statuses:
 
@@ -307,295 +360,351 @@ Statuses:
 * Missed
 * Paused
 
----
+## 4. Frequency-Gated Check-ins
 
-# 4. Accountability Partners
+Check-in behavior respects goal frequency:
+
+* **Daily**: can check in again the next day (midnight reset)
+* **Weekly**: can check in again next week (Monday reset)
+* **Monthly**: can check in again next month (1st of month reset)
+* **One-time**: marks goal as permanently completed after single check-in
+
+When on cooldown:
+
+* Check-in button replaced with "Checked in" badge + "Next in Xh Ym" countdown
+* Pause/Resume button hidden during cooldown period
+* Optimistic UI: instant "Done!" feedback before server confirmation
+
+## 5. Accountability Partners
 
 Users can:
 
-* Invite people via email/link
-* Remove partners
-* Restrict visibility
-* Control access permissions
+* Invite people via shareable link with animated illustration page
+* Accept invites with heart burst animation and auto-redirect
+* View partner items with avatar initial badges
+* Filter items by All / Mine / Partners with count badges
 
 Partners can:
 
 * Accept invite
 * Leave spaces
-* Send encouragement
-* Comment
+* Send encouragement ("Send Strength")
 * Monitor progress
 
-Important:
 Space owners control visibility and permissions.
 
----
-
-# 5. “Send Strength” Feature
+## 6. "Send Strength" Feature
 
 Core engagement feature.
 
-Partners can tap:
-“Send Strength”
+Partners can tap "Send Strength" on any goal. The receiver gets:
 
-The owner receives:
+* **Push notification** (even when app is closed)
+* **In-app toast notification** via Supabase Realtime
+* **Full-screen lightning effect** with synthesized zap sound (Web Audio API: sawtooth crack + sine rumble + shimmer)
+* **Heart burst animation** on the goal card
+* **Floating badge**: "[Name] sent you strength!"
+* **Strength received flash** with pink pulsing ring on the goal card
 
-* Push notification
-* In-app notification
+The sender sees:
 
-Example:
-“Tolu sent you strength for ‘Morning Workout’.”
+* Loading spinner during send
+* Heart burst animation on the card
+* "Sent!" state with pink glow shadow
+* Toast confirmation: "Strength sent! They'll be notified."
 
-This should feel:
+Strength banner on space pages shows actual sender names (1 name, 2 names, or "Name1, Name2, and X others").
 
-* Emotional
-* Supportive
-* Encouraging
+## 7. Reminder System
 
-Not gamified.
+Users can configure reminders per goal:
 
----
+* Toggle enable/disable
+* Preset times: Morning (08:00), Afternoon (14:00), Evening (19:00)
+* Day picker: M-S circle buttons
+* Auto-detects timezone via Intl.DateTimeFormat
+* Saves to accountability_items.reminder_schedule jsonb
 
-# 6. Check-In System
+Backend processing:
 
-Users can:
+* pg_cron runs process_reminders() every minute
+* Checks active items where reminder_schedule->>'enabled' = 'true'
+* Respects timezone and day-of-week filters
+* Deduplicates: no reminder if one sent in the last hour for same item
+* Inserts notification row which triggers the push pipeline
 
-* Mark complete
-* Skip
-* Miss
-* Update progress
+## 8. Push Notification System
 
-Optional:
+Full Web Push implementation:
 
-* Add short notes
-* Upload proof/photos
+* Service worker (public/sw.js) for push display and click routing
+* Skips showing notification if app window is focused (prevents duplicates)
+* Silent SW registration on app load via PushRegistration component
+* Notification settings page: enable/disable flow with permission request
+* iOS Safari detection: shows "Add to Home Screen" guidance
+* VAPID keys for push authentication
+* Edge Function (send-push) handles delivery to all user devices
+* Expired subscriptions (404/410) cleaned up automatically
 
----
+## 9. Notification System
 
-# 7. Notification System
+### Push Notifications (Web Push)
 
-## Push Notifications
+* Reminder alerts (scheduled via pg_cron)
+* Strength received alerts
+* Delivered via Supabase Edge Function -> Web Push API
 
-Must support:
+### In-App Notifications (Supabase Realtime)
 
-* Reminder alerts
-* Encouragement alerts
-* Partner activity
-* Missed commitment alerts
-* Daily check-ins
+* Real-time toast notifications via use-realtime-notifications hook
+* Strength-received custom DOM event for lightning effect
+* Notification list page at /notifications
 
-Suggested Implementation:
+## 10. Realtime Updates
 
-* Firebase Cloud Messaging (FCM)
-* Supabase Edge Functions
-* Browser Push API
+Uses Supabase Realtime for:
 
----
+* Strength notifications (INSERT on notifications table)
+* Strength reactions on goal cards (INSERT on strengths table per space)
+* In-app toast notifications
 
-# 8. Realtime Updates
+## 11. Activity Feed
 
-Use Supabase realtime for:
+Dashboard shows recent activity:
 
-* Comments
-* Notifications
-* Live check-ins
-* Activity feed updates
+* Check-in history with item titles
+* Performance summary with completion stats
+* Stat cards: streak, completion rate, active goals, strengths received
 
----
+## 12. Privacy & Security
 
-# 9. Activity Feed
+* Supabase Row Level Security (RLS) on all tables
+* Users can only manage their own subscriptions, items, and profiles
+* Service role key used only server-side for push subscription management
+* Space owners control visibility and permissions
+* Private by default visibility
+* Secure API routes with auth checks
 
-Users should see activity like:
+## 13. Inline Editing
 
-* “Sarah completed Morning Prayer”
-* “James sent strength”
-* “You missed Gym Session”
+Both goal items and space cards support:
 
-Feed should remain:
-
-* Minimal
-* Useful
-* Encouraging
-
----
-
-# 10. Comments & Encouragement
-
-Lightweight interactions only.
-
-Users can:
-
-* Leave encouragement
-* Respond
-* Motivate
-
-Avoid turning this into:
-
-* A full social media app
-* A chat application
+* Floating dropdown menu (three-dot button) with Edit and Delete options
+* Edit opens inline form with title/description inputs
+* Delete with loading state and confirmation via toast
+* Dropdown uses @base-ui/react Menu primitives with slide-in animation
 
 ---
 
-# 11. Privacy & Security
+# Landing Page (Implemented)
 
-Critical feature.
+Conversion-optimized landing page with:
 
-Users must be able to:
-
-* Revoke access instantly
-* Leave spaces
-* Hide specific accountability items
-* Control visibility
-
-Supabase Row Level Security (RLS) must be implemented properly.
+* Fixed header with backdrop blur
+* Hero section: gradient text headline, pill badge, ambient glow blobs, dual CTA, trust signals
+* Mock UI preview: three cards showing goals, strength received, and reminders
+* Social proof bar: 500+ users, 2400+ goals tracked, 12000+ strengths sent, 89% consistency rate
+* How It Works: 3 numbered steps with connecting lines
+* Features grid: 6 cards with colored icons and hover lift effects
+* Testimonials: 3 cards with star ratings, quotes, and roles
+* Comparison: side-by-side "Other apps" vs "HoldMe"
+* Final CTA: "Create your free account" with reassurance text
+* Footer with navigation links
 
 ---
 
-# Admin Dashboard
+# Profile Page (Implemented)
 
-Admin should manage:
+Rich profile experience with:
 
-* Users
-* Reports
+* Gradient banner with overlapping avatar (camera upload overlay)
+* Inline edit mode for name, bio (160 char limit), and interests
+* Stats grid (2x2): goals created, completion rate, strengths received, strengths sent
+* Activity summary: spaces owned, spaces joined, total check-ins, months active
+* Interests section with emoji + name pills (view mode) or selectable 2-column grid (edit mode)
+* Quick links to settings and spaces
+* Logout button
+
+---
+
+# Spaces Page (Implemented)
+
+* "Manage Spaces" heading with New Space button
+* Stats row: total spaces, total members, total goals
+* Tabbed interface: My Spaces / Joined with count badges and icons (Crown / Users)
+* Space cards with:
+  * Gradient accent bar (blue for owned, purple for joined)
+  * Owner badge or partner avatar initial
+  * Colored stat pills (members, goals, visibility)
+  * Strength count badge with pulse animation
+  * Three-dot dropdown with Edit/Delete (owner only)
+  * Hover effects: shadow, lift, brand-colored ring
+
+---
+
+# Navigation (Implemented)
+
+## Mobile (bottom nav)
+
+* Home (dashboard)
 * Spaces
-* Notifications
-* Moderation
-* Abuse reports
-* Analytics
+* Alerts (notifications)
+* Profile
 
----
+## Desktop (side nav)
 
-# Suggested User Flow
-
-## Onboarding Flow
-
-Landing Page →
-Sign Up →
-Create First Space →
-Add First Accountability Item →
-Invite Partner →
-Enable Notifications
-
----
-
-# Suggested Navigation
-
-## Mobile Navigation
-
+* HoldMe logo
 * Home
 * Spaces
-* Notifications
+* Alerts
 * Profile
+* Settings (bottom)
 
 ---
 
-# UX Priorities
+# Database Schema
 
-The experience should prioritize:
+## Tables
 
-* Emotional connection
-* Simplicity
-* Fast interactions
-* Encouragement
-* Retention
+```
+users              - id, email, full_name, avatar_url, bio, interests[], created_at, updated_at
+spaces             - id, name, description, owner_id, visibility, created_at, updated_at
+space_members      - id, space_id, user_id, role, permissions (jsonb), joined_at
+accountability_items - id, space_id, user_id, title, description, type, frequency, status, due_date, reminder_schedule (jsonb), is_visible, created_at, updated_at
+item_checkins      - id, item_id, user_id, status, note, proof_url, checked_in_at
+strengths          - id, item_id, sender_id, receiver_id, message, created_at
+comments           - id, item_id, user_id, content, created_at
+notifications      - id, user_id, type, title, body, data (jsonb), read, created_at
+invites            - id, space_id, inviter_id, email, token, status, created_at, expires_at
+reports            - id, reporter_id, reported_user_id, space_id, reason, status, created_at
+push_subscriptions - id, user_id, endpoint, p256dh, auth, user_agent, created_at
+```
 
-The platform should feel:
-“Supportive, not stressful.”
+## Database Triggers & Functions
 
----
+* `handle_new_strength()` - trigger on strengths INSERT, creates notification with sender_name and item_title
+* `notify_push_on_insert()` - trigger on notifications INSERT, calls send-push Edge Function via pg_net
+* `process_reminders()` - pg_cron function (every minute), creates reminder notifications for due items
 
-# Suggested Pages
+## Migrations
 
-## Public Website
-
-* Landing Page
-* About
-* Features
-* Pricing (Future)
-* Contact
-
-## User App
-
-* Dashboard
-* Space Details
-* Item Details
-* Notifications
-* Profile
-* Settings
-
-## Admin
-
-* Analytics
-* Users
-* Reports
-* Moderation
-* Notifications
+1. `001_initial_schema.sql` - Core tables, RLS policies, indexes
+2. `002_fix_rls_recursion.sql` - Fix recursive RLS policy issue
+3. `003_add_strength_notification_trigger.sql` - Strength -> notification trigger
+4. `004_push_subscriptions.sql` - Push subscriptions table, pg_net extension
+5. `005_reminder_system.sql` - pg_cron extension, process_reminders() function
+6. `006_push_webhook_trigger.sql` - notifications INSERT -> Edge Function webhook trigger
 
 ---
 
-# Future Features (Phase 2)
+# Edge Functions
 
-* Native mobile app
-* AI accountability assistant
-* Weekly consistency reports
-* Group challenges
-* Voice/video encouragement
-* Habit streaks
-* Community discovery
-* Smart insights
-* Calendar integrations
+## send-push (Deployed, Active)
+
+* `index.ts` - Webhook handler, authenticates via WEBHOOK_SECRET header, fetches subscriptions, sends push
+* `webpush.ts` - Orchestrates VAPID auth + payload encryption + fetch
+* `vapid.ts` - VAPID JWT creation using crypto.subtle ES256 signing
+* `encrypt.ts` - RFC 8291 Web Push payload encryption (ECDH + HKDF + AES-128-GCM)
 
 ---
 
-# Suggested Folder Architecture
+# File Architecture
 
-```txt
-/app
-/components
-/features
-/lib
-/hooks
-/services
-/types
-/utils
+```
+src/
+  app/
+    (app)/               - Authenticated app routes
+      dashboard/         - Dashboard with stats, spaces, activity
+      notifications/     - Notification list
+      profile/           - Profile with stats, edit, interests
+      settings/          - Push notification settings
+      spaces/            - Spaces list with tabs
+        [id]/            - Space detail with items
+          members/       - Member management
+        new/             - Create space
+      layout.tsx         - App shell with push registration + PWA prompt
+    admin/               - Admin dashboard routes
+    api/
+      invite/            - Invite send and auto-join endpoints
+      push/subscribe/    - Push subscription CRUD
+    auth/                - Login, signup, callback
+    invite/[token]/      - Public invite acceptance page
+    page.tsx             - Landing page
+    layout.tsx           - Root layout with font, metadata, toaster
+  components/
+    effects/             - Strength lightning effect
+    layout/              - AppShell, TopBar
+    push/                - PushRegistration (silent SW registration)
+    pwa/                 - PWA install prompt (Android + iOS)
+    ui/                  - shadcn components (avatar, badge, button, card, dialog, dropdown-menu, etc.)
+  features/
+    activity/            - Activity feed
+    dashboard/           - Performance summary, stat cards
+    items/               - AddItemForm (4-step wizard), ItemList, ReminderSettings
+    notifications/       - NotificationList, NotificationSettings
+    profile/             - ProfileView
+    spaces/              - SpaceCard, SpaceHeader, SpaceTabs, StrengthBanner, InviteButton, MemberList
+  hooks/
+    use-realtime-notifications.ts - Realtime notification listener + strength-received event dispatch
+    use-user.ts
+  lib/
+    push/                - register-sw.ts, subscribe.ts (VAPID helpers)
+    supabase/            - client.ts, server.ts, middleware.ts
+    utils.ts
+  middleware.ts          - Auth middleware (excludes sw.js)
+  types/                 - database.ts, index.ts
+public/
+  sw.js                  - Service worker (push display, click routing)
+  manifest.json          - PWA manifest (HoldMe, standalone, brand theme)
+supabase/
+  migrations/            - 6 migration files
+  functions/send-push/   - Edge Function (4 files)
 ```
 
 ---
 
-# Database Tables
+# Environment Variables
 
-```txt
-users
-spaces
-space_members
-accountability_items
-item_checkins
-strengths
-comments
-notifications
-invites
-reports
+```
+NEXT_PUBLIC_SUPABASE_URL         - Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY    - Supabase anon/public key
+SUPABASE_SERVICE_ROLE_KEY        - Supabase service role key (server-side only)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY     - VAPID public key for push subscriptions
+```
+
+Edge Function secrets (set via supabase secrets set):
+
+```
+VAPID_PRIVATE_KEY                - VAPID private key for JWT signing
+VAPID_PUBLIC_KEY                 - VAPID public key
+VAPID_SUBJECT                    - mailto: contact for VAPID (mailto:timxdesign@gmail.com)
+WEBHOOK_SECRET                   - Shared secret for webhook authentication
 ```
 
 ---
 
 # Security Requirements
 
-* Secure authentication
-* Proper authorization
+* Secure authentication (Supabase Auth with OTP + OAuth)
+* Proper authorization (RLS on all 11 tables)
 * Supabase RLS enforcement
-* Secure API routes
+* Secure API routes (auth check before operations)
 * Protected admin routes
 * Notification permission management
+* Service role key never exposed to client
+* Webhook secret for Edge Function authentication
+* Push subscription cleanup for expired endpoints
 
 ---
 
 # Performance Requirements
 
-* Fast loading
-* Optimized mobile experience
+* Fast loading (Next.js static + dynamic rendering)
+* Optimized mobile experience (mobile-first design)
 * Lazy loading where necessary
-* Efficient realtime subscriptions
+* Efficient realtime subscriptions (per-space channels)
+* Service worker skips push display when app is focused
+* Optimistic UI for check-ins and strength sends
 
 ---
 
@@ -606,6 +715,31 @@ reports
 * Check-in completion rate
 * Invite conversion rate
 * Notification engagement rate
+* Strengths sent/received ratio
+* Push notification opt-in rate
+
+---
+
+# Pending / Remaining Setup
+
+* Set VAPID secrets on Edge Function (requires `supabase login` + `supabase secrets set`)
+* Create PWA icon files (public/icon-192.png, public/icon-512.png) referenced in manifest.json
+* End-to-end testing of full push notification pipeline
+
+---
+
+# Future Features (Phase 2)
+
+* Native mobile app
+* AI accountability assistant
+* Weekly consistency reports
+* Group challenges
+* Voice/video encouragement
+* Habit streaks visualization
+* Community discovery
+* Smart insights
+* Calendar integrations
+* Apple Login
 
 ---
 
@@ -617,4 +751,4 @@ It is about consistency through trusted human support.
 
 The product should emotionally communicate:
 
-“You don’t have to stay consistent alone.”
+"You don't have to stay consistent alone."
