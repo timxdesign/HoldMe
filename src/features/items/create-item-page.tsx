@@ -417,7 +417,7 @@ export function CreateItemPage({ spaceId }: CreateItemPageProps) {
 
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Held accountable for?</h1>
+          <h1 className="text-xl font-bold tracking-tight">Be held accountable for?</h1>
           <p className="text-sm text-muted-foreground mt-1">Choose a type and give it a name.</p>
         </div>
 
