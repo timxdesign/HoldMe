@@ -5,13 +5,9 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import {
   UsersGroupTwoRounded,
-  AltArrowRight,
   Heart,
   Target,
-  Lock,
-  Earth,
   Crown,
-  Stars,
   MenuDots,
   Pen2,
   TrashBinTrash,
@@ -54,8 +50,6 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
   const itemCount = typeof firstItem?.count === "number"
     ? firstItem.count
     : space.accountability_items?.length ?? 0
-  const isPrivate = space.visibility === "private"
-  const isJoined = !isOwner
 
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(space.name)
@@ -113,28 +107,15 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
     <div
       onClick={handleNavigate}
       className={cn(
-        "group relative overflow-hidden rounded-2xl bg-card ring-1 transition-all duration-300",
+        "group relative rounded-xl ring-1 transition-all duration-200",
         editing
-          ? "ring-brand/30 shadow-lg"
-          : isJoined
-            ? "ring-foreground/8 hover:ring-purple-500/25 hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5 cursor-pointer"
-            : "ring-foreground/10 hover:ring-brand/25 hover:shadow-lg hover:shadow-brand/5 hover:-translate-y-0.5 cursor-pointer"
+          ? "ring-brand/30 bg-card"
+          : "ring-foreground/[0.06] hover:ring-foreground/15 hover:bg-muted/30 cursor-pointer"
       )}
     >
-      {/* Gradient accent bar */}
-      <div
-        className={cn(
-          "h-[3px] transition-opacity duration-300",
-          isJoined
-            ? "bg-gradient-to-r from-purple-500/40 via-pink-500/30 to-purple-500/40 opacity-60 group-hover:opacity-100"
-            : "bg-gradient-to-r from-brand/40 via-brand-secondary/30 to-brand/40 opacity-60 group-hover:opacity-100"
-        )}
-      />
-
-      <div className="p-4 space-y-3">
-        {/* Header */}
+      <div className="p-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
+          <div className="min-w-0 flex-1">
             {editing ? (
               <div className="space-y-3 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
                 <div className="space-y-1.5">
@@ -188,7 +169,7 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
             ) : (
               <>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-[15px] truncate group-hover:text-brand transition-colors">
+                  <h3 className="font-semibold text-[15px] truncate group-hover:text-foreground transition-colors">
                     {space.name}
                   </h3>
                   {isOwner && (
@@ -199,21 +180,8 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
                   )}
                 </div>
 
-                {ownerName && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-4 w-4 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center shrink-0">
-                      <span className="text-[7px] font-bold text-white">
-                        {ownerName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      by <span className="font-medium text-foreground/70">{ownerName}</span>
-                    </span>
-                  </div>
-                )}
-
                 {space.description && (
-                  <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed mt-1">
                     {space.description}
                   </p>
                 )}
@@ -221,81 +189,61 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
             )}
           </div>
 
-          {!editing && (
-            <div className="shrink-0 flex flex-col items-center gap-2 pt-0.5">
-              {isOwner && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors data-popup-open:bg-muted data-popup-open:text-foreground">
-                      <MenuDots className="h-4 w-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
-                      <DropdownMenuItem onClick={() => { setEditing(true) }}>
-                        <Pen2 className="h-3.5 w-3.5" />
-                        Edit space
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onClick={handleDelete}
-                        disabled={deleting}
-                      >
-                        {deleting ? (
-                          <Restart className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <TrashBinTrash className="h-3.5 w-3.5" />
-                        )}
-                        {deleting ? "Deleting..." : "Delete space"}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-              {strengthCount > 0 && (
-                <div className="flex items-center gap-1 bg-pink-500/10 text-pink-500 rounded-full px-2 py-1 shadow-sm shadow-pink-500/10">
-                  <Heart className="h-3 w-3 fill-current animate-pulse" />
-                  <span className="text-[10px] font-bold">{strengthCount}</span>
-                </div>
-              )}
-              {!isOwner && (
-                <div className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center transition-all duration-300 group-hover:bg-brand/10">
-                  <AltArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 transition-all duration-300 group-hover:text-brand group-hover:translate-x-0.5" />
-                </div>
-              )}
+          {!editing && isOwner && (
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="p-1.5 rounded-lg text-muted-foreground/40 hover:bg-muted hover:text-foreground transition-colors data-popup-open:bg-muted data-popup-open:text-foreground">
+                  <MenuDots className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
+                  <DropdownMenuItem onClick={() => { setEditing(true) }}>
+                    <Pen2 className="h-3.5 w-3.5" />
+                    Edit space
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <Restart className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <TrashBinTrash className="h-3.5 w-3.5" />
+                    )}
+                    {deleting ? "Deleting..." : "Delete space"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
 
-        {/* Stats row */}
         {!editing && (
-          <div className="flex items-center gap-2 pt-1 border-t border-foreground/5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-500/8 px-2.5 py-1 text-[11px]">
-              <UsersGroupTwoRounded className="h-3 w-3 text-green-500" />
-              <span className="font-semibold text-green-600">{memberCount}</span>
-              <span className="text-muted-foreground">member{memberCount !== 1 ? "s" : ""}</span>
-            </span>
-
-            {itemCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/8 px-2.5 py-1 text-[11px]">
-                <Target className="h-3 w-3 text-orange-500" />
-                <span className="font-semibold text-orange-600">{itemCount}</span>
-                <span className="text-muted-foreground">goal{itemCount !== 1 ? "s" : ""}</span>
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-foreground/[0.04] text-xs text-muted-foreground">
+            {ownerName ? (
+              <span className="text-muted-foreground">
+                by <span className="font-medium text-foreground/70">{ownerName}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <UsersGroupTwoRounded className="h-3 w-3" />
+                {memberCount} member{memberCount !== 1 ? "s" : ""}
               </span>
             )}
-
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] text-muted-foreground">
-              {isPrivate ? (
-                <Lock className="h-2.5 w-2.5" />
-              ) : (
-                <Earth className="h-2.5 w-2.5" />
-              )}
-              <span className="font-medium">{isPrivate ? "Private" : "Open"}</span>
-            </span>
-
+            {itemCount > 0 && (
+              <>
+                <span className="text-foreground/10">&middot;</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Target className="h-3 w-3" />
+                  {itemCount} goal{itemCount !== 1 ? "s" : ""}
+                </span>
+              </>
+            )}
             {strengthCount > 0 && (
-              <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-pink-500 font-medium">
-                <Stars className="h-2.5 w-2.5" />
-                Active support
+              <span className="ml-auto inline-flex items-center gap-1 text-pink-500">
+                <Heart className="h-3 w-3 fill-current" />
+                <span className="text-[11px] font-medium">{strengthCount}</span>
               </span>
             )}
           </div>

@@ -6,7 +6,7 @@ import {
   Target,
   Bell,
   ArrowRight,
-  Bolt,
+  Record,
   Shield,
   Stars,
   CheckCircle,
@@ -394,11 +394,11 @@ export default function LandingPage() {
                 description="Morning, evening, weekdays — you choose when. Nudges, not nagging."
               />
               <FeatureCard
-                icon={<Bolt className="h-5 w-5" />}
-                gradient="from-yellow-500/10 to-orange-400/10"
-                iconColor="text-yellow-600"
-                title="Push Notifications"
-                description="Real-time alerts even when the app is closed. Never miss encouragement or a check-in."
+                icon={<Record className="h-5 w-5" />}
+                gradient="from-teal-500/10 to-cyan-400/10"
+                iconColor="text-teal-500"
+                title="Circles"
+                description="Group goals with friends, family, or teammates. Everyone checks in, everyone stays accountable."
               />
               <FeatureCard
                 icon={<Shield className="h-5 w-5" />}

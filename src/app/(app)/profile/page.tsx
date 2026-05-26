@@ -77,7 +77,7 @@ export default async function ProfilePage() {
   return (
     <>
       <TopBar title="Profile" showCreate={false} />
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+      <div className="max-w-sm mx-auto px-4 py-8 pb-24">
         <ProfileView
           profile={profile}
           userId={user.id}
