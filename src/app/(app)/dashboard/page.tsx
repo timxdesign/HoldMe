@@ -1,11 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { TopBar } from "@/components/layout/top-bar"
-import { SpaceCard } from "@/features/spaces/space-card"
-import { ActivityFeed } from "@/features/activity/activity-feed"
-import { PerformanceSummary } from "@/features/dashboard/performance-summary"
-import { StatCards } from "@/features/dashboard/stat-cards"
-import Link from "next/link"
-import { AddCircle, ArrowRight } from "@solar-icons/react"
+import { DashboardView } from "@/features/dashboard/dashboard-view"
 
 export const metadata = {
   title: "Dashboard",
@@ -104,79 +99,17 @@ export default async function DashboardPage() {
   return (
     <>
       <TopBar title="Dashboard" showCreate={false} />
-      <div className="max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6">
-        <div className="space-y-3">
-          <PerformanceSummary
-            firstName={firstName}
-            completedCount={completedCount}
-            totalCheckins={totalCheckins}
-            streak={streak}
-            strengthsReceived={strengthsReceived}
-            activeGoals={activeGoals}
-          />
-
-          <StatCards
-            streak={streak}
-            completionRate={completionRate}
-            activeGoals={activeGoals}
-            strengthsReceived={strengthsReceived}
-          />
-        </div>
-
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Your Spaces</h2>
-            <Link
-              href="/spaces/new"
-              className="flex items-center gap-1 text-sm text-brand font-medium hover:underline"
-            >
-              <AddCircle className="h-3.5 w-3.5" />
-              New space
-            </Link>
-          </div>
-
-          {spaces && spaces.length > 0 ? (
-            <div className="grid gap-3">
-              {spaces.map((space) => {
-                const isSpaceOwner = space.owner_id === authUser?.id
-                const owner = space.owner as { full_name: string | null } | null
-                const ownerName = !isSpaceOwner ? (owner?.full_name ?? undefined) : undefined
-                return (
-                  <SpaceCard key={space.id} space={space} ownerName={ownerName} isOwner={isSpaceOwner} />
-                )
-              })}
-              {spaces.length >= 5 && (
-                <Link
-                  href="/spaces"
-                  className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground py-3 rounded-xl border border-dashed transition-colors hover:border-brand/30"
-                >
-                  View all spaces
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-12 rounded-xl border border-dashed">
-              <p className="text-muted-foreground mb-3 text-sm">
-                No spaces yet. Create your first accountability space!
-              </p>
-              <Link
-                href="/spaces/new"
-                className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
-              >
-                <AddCircle className="h-4 w-4" />
-                Create space
-              </Link>
-            </div>
-          )}
-        </section>
-
-        {recentCheckins && recentCheckins.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-base font-semibold">Recent Activity</h2>
-            <ActivityFeed checkins={recentCheckins} />
-          </section>
-        )}
+      <div className="max-w-lg mx-auto px-4 py-8 pb-24">
+        <DashboardView
+          firstName={firstName}
+          streak={streak}
+          completionRate={completionRate}
+          activeGoals={activeGoals}
+          strengthsReceived={strengthsReceived}
+          spaces={spaces ?? []}
+          recentCheckins={recentCheckins ?? []}
+          userId={authUser?.id ?? ""}
+        />
       </div>
     </>
   )
