@@ -78,6 +78,23 @@ export async function POST(request: Request) {
 
   const userExists = !!existingUserRecord
 
+  if (userExists && existingUserRecord) {
+    const inviterName = user.user_metadata?.full_name ?? user.email ?? "Someone"
+    await serviceClient.from("notifications").insert({
+      user_id: existingUserRecord.id,
+      type: "invite",
+      title: `${inviterName} invited you to ${space.name}`,
+      body: `You've been invited to join the space "${space.name}".`,
+      data: {
+        invite_id: invite.id,
+        space_id: spaceId,
+        space_name: space.name,
+        inviter_name: inviterName,
+        token: invite.token,
+      },
+    })
+  }
+
   let emailSent = false
 
   if (!userExists) {

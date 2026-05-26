@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { useConfetti } from "@/components/effects/confetti"
 import { Button } from "@/components/ui/button"
 import {
   CheckCircle,
@@ -115,6 +116,8 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   const [savingEdit, setSavingEdit] = useState(false)
   const [expandedRemindersId, setExpandedRemindersId] = useState<string | null>(null)
   const supabase = createClient()
+  const fireConfetti = useConfetti()
+  const checkBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
   const handleRealtimeStrength = useCallback(
     (payload: { new: { item_id: string; sender_id: string } }) => {
@@ -181,6 +184,14 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
       })
       toast.error("Failed to check in")
       return
+    }
+
+    const btn = checkBtnRefs.current.get(itemId)
+    if (btn) {
+      const rect = btn.getBoundingClientRect()
+      fireConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    } else {
+      fireConfetti()
     }
 
     const now = new Date().toISOString()
@@ -348,6 +359,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
               <div className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30">
                 {isOwn ? (
                   <button
+                    ref={(el) => { if (el) checkBtnRefs.current.set(item.id, el); else checkBtnRefs.current.delete(item.id) }}
                     onClick={() => !isChecked && !isPaused && handleCheckin(item.id)}
                     disabled={isChecked || isPaused}
                     className={cn(

@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useConfetti } from "@/components/effects/confetti"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -67,6 +68,8 @@ export function CircleView({
   const [justChecked, setJustChecked] = useState<Set<string>>(new Set())
   const [showInvite, setShowInvite] = useState(false)
   const [inviteLink, setInviteLink] = useState("")
+  const fireConfetti = useConfetti()
+  const checkinBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
   const [copied, setCopied] = useState(false)
   const [generatingLink, setGeneratingLink] = useState(false)
 
@@ -118,6 +121,14 @@ export function CircleView({
     if (error) {
       toast.error("Failed to check in")
       return
+    }
+
+    const btn = checkinBtnRefs.current.get(goalId)
+    if (btn) {
+      const rect = btn.getBoundingClientRect()
+      fireConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2)
+    } else {
+      fireConfetti()
     }
 
     setCheckins([data, ...checkins])
@@ -288,6 +299,7 @@ export function CircleView({
                 >
                   <div className="flex items-center gap-3">
                     <button
+                      ref={(el) => { if (el) checkinBtnRefs.current.set(goal.id, el); else checkinBtnRefs.current.delete(goal.id) }}
                       onClick={() => handleCheckin(goal.id)}
                       disabled={isLoading || isJustChecked}
                       className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center transition-all duration-300 ${

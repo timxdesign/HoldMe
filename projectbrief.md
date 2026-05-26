@@ -148,21 +148,60 @@ The UI should feel:
 Avoid:
 
 * Overly corporate interfaces
-* Clutter
-* Heavy dashboards
+* Clutter and visual noise (gradient bars, colored stat pills, stats grids)
+* Heavy dashboards and dense information displays
 * Dark productivity aesthetics
+* Shadow/lift hover effects on cards — use subtle background tint instead
+* Wide layouts — keep content focused and narrow
 
 ## Design System (Implemented)
 
-* Rounded-2xl cards with ring-1 borders and hover shadow/lift effects
-* Gradient accent bars per item type (blue for goals, green for habits, orange for tasks, purple for commitments)
-* Colored status/frequency/type pills with dot indicators
-* Ambient gradient blobs on hero sections
-* Slide-in animations (animate-in, fade-in, slide-in-from-*)
-* Floating dropdown menus for edit/delete actions
-* Inline edit forms that expand in-place
-* Filter tab controls (pill-style segmented buttons)
-* Avatar initials with gradient backgrounds for partner items
+### Current Direction: Minimal & Focused
+
+The design has evolved toward a stripped-back, content-first approach. Every screen should feel calm, scannable, and focused — no visual layer that doesn't earn its place.
+
+**Layout**
+
+* Narrow, focused content column (`max-w-2xl`) for all detail and list pages
+* Text-based headers — no gradient cards or bordered header containers
+* Flat visual hierarchy: title, metadata line, actions, then content
+* Generous vertical spacing between sections for breathing room
+
+**Cards & Containers**
+
+* Subtle ring borders (`ring-foreground/[0.06]`) — nearly invisible at rest
+* Hover: gentle background tint (`hover:bg-muted/30`) + slightly stronger ring — no shadows, no translate/lift
+* No gradient accent bars on cards
+* Stats shown as plain text with small inline icons, not colored pill backgrounds
+
+**Animations**
+
+* Staggered `FadeIn` entrance on page sections (header → actions → content, 0/150/250/350ms)
+* Per-card stagger in lists (60ms offset per item)
+* Tab content animates on switch via `key={tab}` remount
+* Subtle emoji/icon scale on hover (5%)
+* Existing interaction animations preserved: check-in circle fill, heart scale on strength send, inline form slide-in
+
+**Tabs & Filtering**
+
+* Pill-style segmented controls (rounded-lg, bg-muted/40 track)
+* Text-only tab labels with inline count — no icons in tabs
+* Conditional tabs: only rendered when both categories have items; single-category views skip tabs entirely
+
+**Information Density**
+
+* Joined spaces show owner name ("by Name") in stats row instead of member count
+* Owned spaces show member count in stats row
+* No privacy badges, no "Active support" labels — only information the user acts on
+* Strength count shown as a quiet pink number with heart icon, no pulse animation
+
+### Preserved Patterns
+
+* Ambient gradient blobs on landing/hero sections
+* Floating dropdown menus for edit/delete actions (owner only)
+* Inline edit forms that expand in-place with slide-in animation
+* 4-step goal creation wizard with step indicator and directional transitions
+* Real-time strength flash notifications on goal cards
 
 ---
 
@@ -328,11 +367,10 @@ Users can:
 
 * Create spaces with name, description, and visibility settings
 * View spaces in tabbed interface (My Spaces / Joined)
-* See owner name on joined space cards with avatar initial
+* See owner name on joined space cards in stats row
 * Edit space name and description inline via floating dropdown menu
 * Delete spaces via floating dropdown menu
-* See colored stat pills (members in green, goals in orange, visibility badge)
-* Gradient accent bars: blue for owned spaces, purple for joined spaces
+* See text-based stats with small icons (members, goals, strength count)
 
 ## 3. Accountability Items (Goals)
 
@@ -529,16 +567,16 @@ Rich profile experience with:
 
 # Spaces Page (Implemented)
 
-* "Manage Spaces" heading with New Space button
-* Stats row: total spaces, total members, total goals
-* Tabbed interface: My Spaces / Joined with count badges and icons (Crown / Users)
+* Clean "Spaces" heading with "New Space" button
+* Conditional tabs: My Spaces / Joined shown only when user has both; single-category lists render without tabs
+* Staggered card entrance animations (60ms per card)
 * Space cards with:
-  * Gradient accent bar (blue for owned, purple for joined)
-  * Owner badge or partner avatar initial
-  * Colored stat pills (members, goals, visibility)
-  * Strength count badge with pulse animation
+  * Space name with Owner badge (if owned)
+  * Owner name in stats row ("by Name") for joined spaces, member count for owned spaces
+  * Description (line-clamped)
+  * Text-based stats: member count or owner name · goal count · strength count
   * Three-dot dropdown with Edit/Delete (owner only)
-  * Hover effects: shadow, lift, brand-colored ring
+  * Subtle hover: background tint + ring
 
 ---
 
