@@ -22,8 +22,6 @@ import {
   ArrowRight,
   Stars,
   CheckCircle,
-  Bell,
-  BellOff,
   ClockCircle,
 } from "@solar-icons/react"
 import { toast } from "sonner"
@@ -34,55 +32,23 @@ interface AddItemFormProps {
 }
 
 const typeOptions = [
-  {
-    value: "goal",
-    label: "Goal",
-    description: "A milestone you want to hit",
-    icon: Target,
-    color: "text-brand",
-    bg: "bg-brand/10",
-    ring: "ring-brand",
-  },
-  {
-    value: "habit",
-    label: "Habit",
-    description: "Something to do regularly",
-    icon: Repeat,
-    color: "text-green-500",
-    bg: "bg-green-500/10",
-    ring: "ring-green-500",
-  },
-  {
-    value: "task",
-    label: "Task",
-    description: "A specific thing to complete",
-    icon: CheckSquare,
-    color: "text-orange-500",
-    bg: "bg-orange-500/10",
-    ring: "ring-orange-500",
-  },
-  {
-    value: "commitment",
-    label: "Commitment",
-    description: "A promise you're making",
-    icon: HandShake,
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-    ring: "ring-purple-500",
-  },
+  { value: "goal", label: "Goal", icon: Target, color: "text-brand", bg: "bg-brand/10", ring: "ring-brand" },
+  { value: "habit", label: "Habit", icon: Repeat, color: "text-green-500", bg: "bg-green-500/10", ring: "ring-green-500" },
+  { value: "task", label: "Task", icon: CheckSquare, color: "text-orange-500", bg: "bg-orange-500/10", ring: "ring-orange-500" },
+  { value: "commitment", label: "Commitment", icon: HandShake, color: "text-purple-500", bg: "bg-purple-500/10", ring: "ring-purple-500" },
 ]
 
 const frequencyOptions = [
-  { value: "daily", label: "Every day", sub: "Daily check-ins" },
-  { value: "weekly", label: "Every week", sub: "Weekly progress" },
-  { value: "monthly", label: "Every month", sub: "Monthly review" },
-  { value: "one_time", label: "Just once", sub: "One-time goal" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "one_time", label: "Once" },
 ]
 
-const presetTimes = [
-  { label: "Morning", value: "08:00", icon: "🌅" },
-  { label: "Afternoon", value: "14:00", icon: "☀️" },
-  { label: "Evening", value: "19:00", icon: "🌙" },
+const timePresets = [
+  { id: "morning", label: "Morning", sub: "8:00 AM", value: "08:00", emoji: "🌅" },
+  { id: "afternoon", label: "Afternoon", sub: "2:00 PM", value: "14:00", emoji: "☀️" },
+  { id: "evening", label: "Evening", sub: "7:00 PM", value: "19:00", emoji: "🌙" },
 ]
 
 const dayLabels = [
@@ -96,46 +62,57 @@ const dayLabels = [
 ]
 
 const TITLE_MAX = 80
-const TOTAL_STEPS = 4
 
 export function AddItemForm({ spaceId }: AddItemFormProps) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
+  const [direction, setDirection] = useState<"forward" | "back">("forward")
+
+  const [type, setType] = useState("goal")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [type, setType] = useState("")
-  const [frequency, setFrequency] = useState("")
-  const [reminderEnabled, setReminderEnabled] = useState(false)
-  const [reminderTimes, setReminderTimes] = useState<string[]>(["08:00"])
-  const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5])
+  const [showDescription, setShowDescription] = useState(false)
+
+  const [frequency, setFrequency] = useState("daily")
+  const [timePreset, setTimePreset] = useState("morning")
+  const [customTime, setCustomTime] = useState("09:00")
+  const [reminderDays, setReminderDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 7])
+
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [direction, setDirection] = useState<"forward" | "back">("forward")
+
   const router = useRouter()
   const supabase = createClient()
 
   function reset() {
     setStep(0)
+    setDirection("forward")
+    setType("goal")
     setTitle("")
     setDescription("")
-    setType("")
-    setFrequency("")
-    setReminderEnabled(false)
-    setReminderTimes(["08:00"])
-    setReminderDays([1, 2, 3, 4, 5])
+    setShowDescription(false)
+    setFrequency("daily")
+    setTimePreset("morning")
+    setCustomTime("09:00")
+    setReminderDays([1, 2, 3, 4, 5, 6, 7])
     setLoading(false)
     setSuccess(false)
-    setDirection("forward")
   }
 
   function goNext() {
     setDirection("forward")
-    setStep((s) => s + 1)
+    setStep(1)
   }
 
   function goBack() {
     setDirection("back")
-    setStep((s) => s - 1)
+    setStep(0)
+  }
+
+  function toggleDay(day: number) {
+    setReminderDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
+    )
   }
 
   async function handleSubmit() {
@@ -152,8 +129,14 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
     }
 
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-    const reminderSchedule = reminderEnabled
-      ? { enabled: true, times: reminderTimes, timezone, days: reminderDays }
+    const reminderTime =
+      timePreset === "custom"
+        ? customTime
+        : (timePresets.find((t) => t.id === timePreset)?.value ?? "08:00")
+
+    const isOneTime = frequency === "one_time"
+    const reminderSchedule = !isOneTime
+      ? { enabled: true, times: [reminderTime], timezone, days: reminderDays }
       : null
 
     const { error } = await supabase.from("accountability_items").insert({
@@ -161,8 +144,8 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
       user_id: user.id,
       title,
       description: description || null,
-      type: type || "goal",
-      frequency: frequency || "daily",
+      type,
+      frequency,
       reminder_schedule: reminderSchedule,
     })
 
@@ -174,22 +157,28 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
     }
 
     setSuccess(true)
-    toast.success("Goal added!")
+    toast.success("Goal created!")
     setTimeout(() => {
       setOpen(false)
       reset()
       router.refresh()
-    }, 1200)
+    }, 1000)
   }
 
   const selectedType = typeOptions.find((t) => t.value === type)
+  const showReminder = frequency !== "one_time"
+  const showDays = frequency === "daily" || frequency === "weekly"
 
-  const canProceedFromStep: Record<number, boolean> = {
-    0: !!type,
-    1: !!title.trim(),
-    2: !!frequency,
-    3: true,
-  }
+  const resolvedTime =
+    timePreset === "custom"
+      ? customTime
+      : (timePresets.find((t) => t.id === timePreset)?.label.toLowerCase() ?? "morning")
+  const daysLabel =
+    reminderDays.length === 7
+      ? "every day"
+      : reminderDays.length === 5 && reminderDays.every((d) => d <= 5)
+        ? "on weekdays"
+        : `${reminderDays.length} days/week`
 
   return (
     <Dialog
@@ -206,11 +195,28 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
         Add Goal
       </DialogTrigger>
       <DialogContent className="sm:max-w-md overflow-hidden" showCloseButton={!success}>
-        {success ? <SuccessView reminderEnabled={reminderEnabled} /> : (
+        {success ? (
+          <SuccessView />
+        ) : (
           <>
-            <StepHeader step={step} selectedType={selectedType} frequency={frequency} />
-            <StepIndicator current={step} total={TOTAL_STEPS} />
+            {/* Step dots */}
+            <div className="flex items-center justify-center gap-1.5 pt-1">
+              {[0, 1].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1 rounded-full transition-all duration-300",
+                    i === step
+                      ? "w-6 bg-brand"
+                      : i < step
+                        ? "w-3 bg-brand/40"
+                        : "w-3 bg-foreground/10"
+                  )}
+                />
+              ))}
+            </div>
 
+            {/* Content */}
             <div
               key={step}
               className={cn(
@@ -220,41 +226,333 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
                   : "fade-in slide-in-from-left-4"
               )}
             >
-              {step === 0 && (
-                <StepType type={type} onSelect={(v) => { setType(v); goNext() }} />
-              )}
-              {step === 1 && (
-                <StepDetails
-                  title={title}
-                  description={description}
-                  onTitleChange={setTitle}
-                  onDescriptionChange={setDescription}
-                />
-              )}
-              {step === 2 && (
-                <StepFrequency frequency={frequency} onSelect={setFrequency} />
-              )}
-              {step === 3 && (
-                <StepReminder
-                  enabled={reminderEnabled}
-                  times={reminderTimes}
-                  days={reminderDays}
-                  frequency={frequency}
-                  onToggle={setReminderEnabled}
-                  onTimesChange={setReminderTimes}
-                  onDaysChange={setReminderDays}
-                />
+              {step === 0 ? (
+                <div className="space-y-5 py-2">
+                  <div className="text-center space-y-1">
+                    <h2 className="text-lg font-bold tracking-tight">
+                      What are you working on?
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      Give it a clear, specific name.
+                    </p>
+                  </div>
+
+                  {/* Type pills */}
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {typeOptions.map((opt) => {
+                      const selected = type === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => setType(opt.value)}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ring-1 transition-all duration-200",
+                            selected
+                              ? `${opt.ring} ${opt.bg} ${opt.color}`
+                              : "ring-foreground/10 text-muted-foreground hover:ring-foreground/20 hover:bg-muted/40"
+                          )}
+                        >
+                          <opt.icon className="h-3 w-3" />
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Title */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wide">
+                        Title
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] tabular-nums transition-colors",
+                          title.length > TITLE_MAX - 10
+                            ? "text-red-500"
+                            : "text-muted-foreground/40"
+                        )}
+                      >
+                        {title.length}/{TITLE_MAX}
+                      </span>
+                    </div>
+                    <Input
+                      autoFocus
+                      placeholder="e.g., Run 5K three times a week"
+                      value={title}
+                      onChange={(e) => {
+                        if (e.target.value.length <= TITLE_MAX) setTitle(e.target.value)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && title.trim()) {
+                          e.preventDefault()
+                          goNext()
+                        }
+                      }}
+                      className="h-11 text-sm rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 placeholder:text-muted-foreground/40"
+                    />
+                  </div>
+
+                  {/* Optional description */}
+                  {!showDescription ? (
+                    <button
+                      onClick={() => setShowDescription(true)}
+                      className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                    >
+                      + Add details
+                    </button>
+                  ) : (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                      <Textarea
+                        autoFocus
+                        placeholder="Any context for your accountability partners..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={2}
+                        className="text-sm rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 placeholder:text-muted-foreground/40 resize-none"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-5 py-2">
+                  {/* Header with type badge */}
+                  <div className="text-center space-y-1">
+                    {selectedType && (
+                      <div className="flex items-center justify-center gap-1.5 mb-1">
+                        <span
+                          className={cn(
+                            "flex items-center gap-1 text-[11px] font-semibold",
+                            selectedType.color
+                          )}
+                        >
+                          <selectedType.icon className="h-3 w-3" />
+                          {selectedType.label}
+                        </span>
+                      </div>
+                    )}
+                    <h2 className="text-lg font-bold tracking-tight">How often?</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Set your pace and we&apos;ll remind you.
+                    </p>
+                  </div>
+
+                  {/* Frequency pills */}
+                  <div className="flex items-center justify-center gap-1.5">
+                    {frequencyOptions.map((opt) => {
+                      const selected = frequency === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            setFrequency(opt.value)
+                            if (opt.value === "daily")
+                              setReminderDays([1, 2, 3, 4, 5, 6, 7])
+                            else if (opt.value === "weekly")
+                              setReminderDays([1, 2, 3, 4, 5])
+                          }}
+                          className={cn(
+                            "px-4 py-2 rounded-xl text-xs font-medium ring-1 transition-all duration-200",
+                            selected
+                              ? "ring-brand bg-brand/5 text-brand"
+                              : "ring-foreground/10 text-muted-foreground hover:ring-foreground/20 hover:bg-muted/40"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Reminder config — always on */}
+                  {showReminder && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {/* Time of day */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wide">
+                          Remind me
+                        </p>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {timePresets.map((preset) => {
+                            const selected = timePreset === preset.id
+                            return (
+                              <button
+                                key={preset.id}
+                                onClick={() => setTimePreset(preset.id)}
+                                className={cn(
+                                  "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 ring-1 transition-all duration-200",
+                                  selected
+                                    ? "ring-brand bg-brand/5"
+                                    : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+                                )}
+                              >
+                                <span className="text-sm">{preset.emoji}</span>
+                                <span
+                                  className={cn(
+                                    "text-[11px] font-medium",
+                                    selected ? "text-brand" : "text-foreground"
+                                  )}
+                                >
+                                  {preset.label}
+                                </span>
+                              </button>
+                            )
+                          })}
+                          <button
+                            onClick={() => setTimePreset("custom")}
+                            className={cn(
+                              "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 ring-1 transition-all duration-200",
+                              timePreset === "custom"
+                                ? "ring-brand bg-brand/5"
+                                : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+                            )}
+                          >
+                            <ClockCircle
+                              className={cn(
+                                "h-4 w-4 mt-0.5",
+                                timePreset === "custom"
+                                  ? "text-brand"
+                                  : "text-muted-foreground"
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "text-[11px] font-medium",
+                                timePreset === "custom" ? "text-brand" : "text-foreground"
+                              )}
+                            >
+                              Custom
+                            </span>
+                          </button>
+                        </div>
+
+                        {timePreset === "custom" && (
+                          <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                            <Input
+                              type="time"
+                              value={customTime}
+                              onChange={(e) => setCustomTime(e.target.value)}
+                              className="h-10 rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm text-center"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Day picker */}
+                      {showDays && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wide">
+                              Which days
+                            </p>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setReminderDays([1, 2, 3, 4, 5])}
+                                className={cn(
+                                  "text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors",
+                                  reminderDays.length === 5 &&
+                                    reminderDays.every((d) => d <= 5)
+                                    ? "bg-brand/10 text-brand"
+                                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                                )}
+                              >
+                                Weekdays
+                              </button>
+                              <button
+                                onClick={() => setReminderDays([1, 2, 3, 4, 5, 6, 7])}
+                                className={cn(
+                                  "text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors",
+                                  reminderDays.length === 7
+                                    ? "bg-brand/10 text-brand"
+                                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                                )}
+                              >
+                                Every day
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 justify-between">
+                            {dayLabels.map((day) => (
+                              <button
+                                key={day.value}
+                                onClick={() => toggleDay(day.value)}
+                                className={cn(
+                                  "h-9 w-9 rounded-full text-xs font-semibold transition-all duration-200",
+                                  reminderDays.includes(day.value)
+                                    ? "bg-brand text-white shadow-sm shadow-brand/20"
+                                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                                )}
+                              >
+                                {day.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Summary */}
+                      <div className="rounded-xl bg-brand/5 ring-1 ring-brand/10 px-3.5 py-2.5 flex items-center gap-2">
+                        <ClockCircle className="h-3.5 w-3.5 text-brand shrink-0" />
+                        <p className="text-[11px] text-brand font-medium">
+                          Reminder {resolvedTime}
+                          {showDays && <>, {daysLabel}</>}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!showReminder && (
+                    <div className="rounded-xl bg-muted/40 px-4 py-3 text-center">
+                      <p className="text-[11px] text-muted-foreground">
+                        One-time goals don&apos;t need reminders — just do it!
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
-            <StepNav
-              step={step}
-              canProceed={canProceedFromStep[step]}
-              loading={loading}
-              onBack={goBack}
-              onNext={goNext}
-              onSubmit={handleSubmit}
-            />
+            {/* Nav */}
+            <div className="flex items-center gap-2 pt-1">
+              {step > 0 && (
+                <button
+                  onClick={goBack}
+                  className="flex items-center gap-1 text-xs text-muted-foreground/50 hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                  Back
+                </button>
+              )}
+              <div className="flex-1" />
+              {step === 0 ? (
+                <Button
+                  onClick={goNext}
+                  disabled={!title.trim()}
+                  className="gap-1.5 h-10 rounded-xl"
+                >
+                  Continue
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading || !frequency}
+                  className="gap-2 h-10 px-6 rounded-xl"
+                >
+                  {loading ? (
+                    <>
+                      <Restart className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Stars className="h-4 w-4" />
+                      Create
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </>
         )}
       </DialogContent>
@@ -262,467 +560,11 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
   )
 }
 
-function StepHeader({ step, selectedType, frequency }: { step: number; selectedType?: typeof typeOptions[number]; frequency: string }) {
-  const titles = ["What kind of goal?", "Describe your goal", "How often?", "Set reminders"]
-  const subtitles = [
-    "Pick the type that fits best.",
-    "Give it a clear, specific name.",
-    "Choose how often you'll check in.",
-    "Get nudged so you never forget.",
-  ]
-  return (
-    <div className="text-center space-y-1 pt-1">
-      {selectedType && step > 0 && (
-        <div className="flex items-center justify-center gap-1.5 mb-2">
-          <div className={cn("rounded-md p-1", selectedType.bg)}>
-            <selectedType.icon className={cn("h-3 w-3", selectedType.color)} />
-          </div>
-          <span className={cn("text-[11px] font-semibold uppercase tracking-wide", selectedType.color)}>
-            {selectedType.label}
-          </span>
-          {step >= 3 && frequency && (
-            <>
-              <span className="text-[11px] text-muted-foreground">·</span>
-              <span className="text-[11px] text-muted-foreground font-medium capitalize">
-                {frequency === "one_time" ? "One-time" : frequency}
-              </span>
-            </>
-          )}
-        </div>
-      )}
-      <h2 className="text-lg font-bold tracking-tight">{titles[step]}</h2>
-      <p className="text-xs text-muted-foreground">{subtitles[step]}</p>
-    </div>
-  )
-}
-
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center justify-center gap-1.5 py-1">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1 rounded-full transition-all duration-300",
-            i === current ? "w-6 bg-brand" : i < current ? "w-3 bg-brand/40" : "w-3 bg-foreground/10"
-          )}
-        />
-      ))}
-    </div>
-  )
-}
-
-function StepType({ type, onSelect }: { type: string; onSelect: (v: string) => void }) {
-  return (
-    <div className="grid grid-cols-2 gap-2.5 py-2">
-      {typeOptions.map((opt) => {
-        const selected = type === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onSelect(opt.value)}
-            className={cn(
-              "relative flex flex-col items-start gap-2 rounded-xl p-4 text-left ring-1 transition-all duration-200",
-              selected
-                ? `${opt.ring} ${opt.bg} shadow-sm`
-                : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
-            )}
-          >
-            {selected && (
-              <div className="absolute top-2.5 right-2.5">
-                <div className={cn("rounded-full p-0.5", opt.bg)}>
-                  <CheckCircle className={cn("h-3 w-3", opt.color)} />
-                </div>
-              </div>
-            )}
-            <div className={cn("rounded-lg p-2", opt.bg)}>
-              <opt.icon className={cn("h-5 w-5", selected ? opt.color : "text-muted-foreground")} />
-            </div>
-            <div>
-              <p className={cn("text-sm font-semibold", selected ? opt.color : "text-foreground")}>
-                {opt.label}
-              </p>
-              <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                {opt.description}
-              </p>
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function StepDetails({
-  title,
-  description,
-  onTitleChange,
-  onDescriptionChange,
-}: {
-  title: string
-  description: string
-  onTitleChange: (v: string) => void
-  onDescriptionChange: (v: string) => void
-}) {
-  const titleRef = (el: HTMLInputElement | null) => {
-    if (el && !title) el.focus()
-  }
-
-  return (
-    <div className="space-y-4 py-2">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label htmlFor="goal-title" className="text-sm font-medium">
-            Title
-          </label>
-          <span
-            className={cn(
-              "text-[10px] tabular-nums",
-              title.length > TITLE_MAX - 10 ? "text-red-500" : "text-muted-foreground"
-            )}
-          >
-            {title.length}/{TITLE_MAX}
-          </span>
-        </div>
-        <Input
-          ref={titleRef}
-          id="goal-title"
-          placeholder="e.g., Run 5K three times a week"
-          value={title}
-          onChange={(e) => {
-            if (e.target.value.length <= TITLE_MAX) onTitleChange(e.target.value)
-          }}
-          className="h-11"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="goal-desc" className="text-sm font-medium">
-          Details{" "}
-          <span className="text-muted-foreground font-normal">(optional)</span>
-        </label>
-        <Textarea
-          id="goal-desc"
-          placeholder="Add any context your accountability partners should know..."
-          value={description}
-          onChange={(e) => onDescriptionChange(e.target.value)}
-          rows={3}
-          className="resize-none"
-        />
-      </div>
-    </div>
-  )
-}
-
-function StepFrequency({ frequency, onSelect }: { frequency: string; onSelect: (v: string) => void }) {
-  return (
-    <div className="space-y-2 py-2">
-      {frequencyOptions.map((opt) => {
-        const selected = frequency === opt.value
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onSelect(opt.value)}
-            className={cn(
-              "w-full flex items-center justify-between rounded-xl px-4 py-3 ring-1 transition-all duration-200 text-left",
-              selected
-                ? "ring-brand bg-brand/5 shadow-sm"
-                : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
-            )}
-          >
-            <div>
-              <p className={cn("text-sm font-semibold", selected && "text-brand")}>
-                {opt.label}
-              </p>
-              <p className="text-[11px] text-muted-foreground">{opt.sub}</p>
-            </div>
-            <div
-              className={cn(
-                "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                selected ? "border-brand bg-brand" : "border-foreground/20"
-              )}
-            >
-              {selected && <CheckCircle className="h-3 w-3 text-white" />}
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function StepReminder({
-  enabled,
-  times,
-  days,
-  frequency,
-  onToggle,
-  onTimesChange,
-  onDaysChange,
-}: {
-  enabled: boolean
-  times: string[]
-  days: number[]
-  frequency: string
-  onToggle: (v: boolean) => void
-  onTimesChange: (v: string[]) => void
-  onDaysChange: (v: number[]) => void
-}) {
-  function toggleTime(time: string) {
-    onTimesChange(
-      times.includes(time) ? times.filter((t) => t !== time) : [...times, time]
-    )
-  }
-
-  function toggleDay(day: number) {
-    onDaysChange(
-      days.includes(day) ? days.filter((d) => d !== day) : [...days, day].sort()
-    )
-  }
-
-  const isOneTime = frequency === "one_time"
-
-  return (
-    <div className="space-y-4 py-2">
-      {/* Toggle */}
-      <button
-        onClick={() => onToggle(!enabled)}
-        className={cn(
-          "flex items-center gap-3 w-full rounded-xl px-4 py-3.5 text-left ring-1 transition-all duration-200",
-          enabled
-            ? "ring-brand bg-brand/5"
-            : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
-        )}
-      >
-        <div className={cn(
-          "rounded-xl p-2",
-          enabled ? "bg-brand/10" : "bg-muted/60"
-        )}>
-          {enabled ? (
-            <Bell className={cn("h-4 w-4", enabled ? "text-brand" : "text-muted-foreground")} />
-          ) : (
-            <BellOff className="h-4 w-4 text-muted-foreground" />
-          )}
-        </div>
-        <div className="flex-1">
-          <p className={cn("text-sm font-semibold", enabled && "text-brand")}>
-            {enabled ? "Reminders on" : "Enable reminders"}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            {isOneTime
-              ? "Get a one-time nudge before your deadline"
-              : "Get notified when it's time to check in"}
-          </p>
-        </div>
-        <div
-          className={cn(
-            "h-5 w-9 rounded-full transition-all duration-200 relative shrink-0",
-            enabled ? "bg-brand" : "bg-foreground/15"
-          )}
-        >
-          <div
-            className={cn(
-              "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-200",
-              enabled ? "left-[18px]" : "left-0.5"
-            )}
-          />
-        </div>
-      </button>
-
-      {/* Reminder config */}
-      {enabled && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          {/* Time presets */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-              When to remind
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {presetTimes.map((preset) => {
-                const selected = times.includes(preset.value)
-                return (
-                  <button
-                    key={preset.value}
-                    onClick={() => toggleTime(preset.value)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 rounded-xl px-3 py-3 ring-1 transition-all duration-200",
-                      selected
-                        ? "ring-brand bg-brand/5"
-                        : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
-                    )}
-                  >
-                    <span className="text-base">{preset.icon}</span>
-                    <span className={cn(
-                      "text-xs font-medium",
-                      selected ? "text-brand" : "text-foreground"
-                    )}>
-                      {preset.label}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">{preset.value}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Day picker - hide for one_time */}
-          {!isOneTime && (
-            <div className="space-y-2">
-              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                Which days
-              </p>
-              <div className="flex gap-1.5 justify-between">
-                {dayLabels.map((day) => (
-                  <button
-                    key={day.value}
-                    onClick={() => toggleDay(day.value)}
-                    className={cn(
-                      "h-9 w-9 rounded-full text-xs font-semibold transition-all duration-200",
-                      days.includes(day.value)
-                        ? "bg-brand text-white shadow-sm shadow-brand/20"
-                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                    )}
-                  >
-                    {day.label}
-                  </button>
-                ))}
-              </div>
-              {/* Quick select */}
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => onDaysChange([1, 2, 3, 4, 5])}
-                  className={cn(
-                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
-                    days.length === 5 && days.every((d) => d <= 5)
-                      ? "bg-brand/10 text-brand"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Weekdays
-                </button>
-                <button
-                  onClick={() => onDaysChange([1, 2, 3, 4, 5, 6, 7])}
-                  className={cn(
-                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
-                    days.length === 7
-                      ? "bg-brand/10 text-brand"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Every day
-                </button>
-                <button
-                  onClick={() => onDaysChange([6, 7])}
-                  className={cn(
-                    "text-[10px] font-medium px-2.5 py-1 rounded-full transition-colors",
-                    days.length === 2 && days[0] === 6
-                      ? "bg-brand/10 text-brand"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Weekends
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Summary */}
-          {times.length > 0 && (
-            <div className="rounded-xl bg-brand/5 ring-1 ring-brand/10 px-3.5 py-2.5 flex items-center gap-2">
-              <ClockCircle className="h-3.5 w-3.5 text-brand shrink-0" />
-              <p className="text-[11px] text-brand font-medium">
-                {isOneTime ? "You'll get a reminder " : "Reminders "}
-                {times.map((t) => presetTimes.find((p) => p.value === t)?.label.toLowerCase() ?? t).join(" & ")}
-                {!isOneTime && days.length < 7 && days.length > 0 && (
-                  <> on {days.length === 5 && days.every((d) => d <= 5) ? "weekdays" : `${days.length} days/week`}</>
-                )}
-                {!isOneTime && days.length === 7 && " every day"}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!enabled && (
-        <div className="rounded-xl bg-muted/40 px-4 py-3 text-center">
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            You can always set up reminders later from the goal card.
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function StepNav({
-  step,
-  canProceed,
-  loading,
-  onBack,
-  onNext,
-  onSubmit,
-}: {
-  step: number
-  canProceed: boolean
-  loading: boolean
-  onBack: () => void
-  onNext: () => void
-  onSubmit: () => void
-}) {
-  const isLast = step === TOTAL_STEPS - 1
-
-  return (
-    <div className="flex items-center gap-2 pt-1">
-      {step > 0 && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-1 text-muted-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back
-        </Button>
-      )}
-      <div className="flex-1" />
-      {isLast ? (
-        <Button
-          onClick={onSubmit}
-          disabled={!canProceed || loading}
-          className="gap-2 h-10 px-6"
-        >
-          {loading ? (
-            <>
-              <Restart className="h-4 w-4 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <Stars className="h-4 w-4" />
-              Create Goal
-            </>
-          )}
-        </Button>
-      ) : step > 0 ? (
-        <Button
-          onClick={onNext}
-          disabled={!canProceed}
-          className="gap-1.5 h-10"
-        >
-          Continue
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Button>
-      ) : null}
-    </div>
-  )
-}
-
-function SuccessView({ reminderEnabled }: { reminderEnabled: boolean }) {
+function SuccessView() {
   const [visible, setVisible] = useState(false)
-  useEffect(() => { setVisible(true) }, [])
+  useEffect(() => {
+    setVisible(true)
+  }, [])
 
   return (
     <div
@@ -732,16 +574,14 @@ function SuccessView({ reminderEnabled }: { reminderEnabled: boolean }) {
       )}
     >
       <div className="relative mb-4">
-        <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-          <CheckCircle className="h-8 w-8 text-green-500" />
+        <div className="h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center">
+          <CheckCircle className="h-7 w-7 text-green-500" />
         </div>
         <Stars className="absolute -top-1 -right-1 h-5 w-5 text-yellow-500 animate-pulse" />
       </div>
-      <h3 className="text-lg font-bold">Goal created!</h3>
-      <p className="text-sm text-muted-foreground mt-1">
-        {reminderEnabled
-          ? "Reminders set. Your partners can now see it."
-          : "Your accountability partners can now see it."}
+      <h3 className="text-lg font-bold">You&apos;re all set!</h3>
+      <p className="text-xs text-muted-foreground mt-1">
+        Your accountability partners can now see your goal.
       </p>
     </div>
   )

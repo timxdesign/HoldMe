@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Bell, BellOff, Restart, CheckCircle } from "@solar-icons/react"
+import { Input } from "@/components/ui/input"
+import { Restart, CheckCircle, ClockCircle } from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -17,10 +18,10 @@ interface ReminderSettingsProps {
   } | null
 }
 
-const presetTimes = [
-  { label: "Morning", value: "08:00" },
-  { label: "Afternoon", value: "14:00" },
-  { label: "Evening", value: "19:00" },
+const timePresets = [
+  { id: "morning", label: "Morning", value: "08:00", emoji: "🌅" },
+  { id: "afternoon", label: "Afternoon", value: "14:00", emoji: "☀️" },
+  { id: "evening", label: "Evening", value: "19:00", emoji: "🌙" },
 ]
 
 const dayLabels = [
@@ -33,22 +34,25 @@ const dayLabels = [
   { label: "S", value: 7 },
 ]
 
+function resolvePreset(times: string[]): string {
+  const t = times[0]
+  if (!t) return "morning"
+  const found = timePresets.find((p) => p.value === t)
+  return found ? found.id : "custom"
+}
+
 export function ReminderSettings({ itemId, currentSchedule }: ReminderSettingsProps) {
-  const [enabled, setEnabled] = useState(currentSchedule?.enabled ?? false)
-  const [times, setTimes] = useState<string[]>(currentSchedule?.times ?? ["08:00"])
-  const [days, setDays] = useState<number[]>(currentSchedule?.days ?? [1, 2, 3, 4, 5])
+  const initialTime = currentSchedule?.times?.[0] ?? "08:00"
+  const [timePreset, setTimePreset] = useState(resolvePreset(currentSchedule?.times ?? []))
+  const [customTime, setCustomTime] = useState(
+    timePresets.some((p) => p.value === initialTime) ? "09:00" : initialTime
+  )
+  const [days, setDays] = useState<number[]>(currentSchedule?.days ?? [1, 2, 3, 4, 5, 6, 7])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const supabase = createClient()
 
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-
-  function toggleTime(time: string) {
-    setTimes((prev) =>
-      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
-    )
-    setSaved(false)
-  }
 
   function toggleDay(day: number) {
     setDays((prev) =>
@@ -60,9 +64,12 @@ export function ReminderSettings({ itemId, currentSchedule }: ReminderSettingsPr
   async function handleSave() {
     setSaving(true)
 
-    const schedule = enabled
-      ? { enabled: true, times, timezone, days }
-      : { enabled: false, times: [], timezone, days: [] }
+    const reminderTime =
+      timePreset === "custom"
+        ? customTime
+        : (timePresets.find((t) => t.id === timePreset)?.value ?? "08:00")
+
+    const schedule = { enabled: true, times: [reminderTime], timezone, days }
 
     const { error } = await supabase
       .from("accountability_items")
@@ -77,95 +84,128 @@ export function ReminderSettings({ itemId, currentSchedule }: ReminderSettingsPr
     }
 
     setSaved(true)
-    toast.success(enabled ? "Reminders set!" : "Reminders disabled")
+    toast.success("Reminders updated!")
     setTimeout(() => setSaved(false), 2000)
   }
 
   return (
     <div className="space-y-3">
-      <button
-        onClick={() => {
-          setEnabled(!enabled)
-          setSaved(false)
-        }}
-        className={cn(
-          "flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm transition-all ring-1",
-          enabled
-            ? "ring-brand bg-brand/5 text-brand"
-            : "ring-foreground/10 text-muted-foreground hover:ring-foreground/20"
-        )}
-      >
-        {enabled ? (
-          <Bell className="h-3.5 w-3.5" />
-        ) : (
-          <BellOff className="h-3.5 w-3.5" />
-        )}
-        <span className="font-medium">
-          {enabled ? "Reminders on" : "Set reminders"}
-        </span>
-      </button>
-
-      {enabled && (
-        <div className="space-y-3 pl-1 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-              When
-            </p>
-            <div className="flex gap-1.5">
-              {presetTimes.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => toggleTime(preset.value)}
-                  className={cn(
-                    "rounded-lg px-3 py-1.5 text-xs font-medium ring-1 transition-all",
-                    times.includes(preset.value)
-                      ? "ring-brand bg-brand/10 text-brand"
-                      : "ring-foreground/10 text-muted-foreground hover:ring-foreground/20"
-                  )}
-                >
+      {/* Time presets */}
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wide">
+          Remind me
+        </p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {timePresets.map((preset) => {
+            const selected = timePreset === preset.id
+            return (
+              <button
+                key={preset.id}
+                onClick={() => { setTimePreset(preset.id); setSaved(false) }}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 ring-1 transition-all duration-200",
+                  selected
+                    ? "ring-brand bg-brand/5"
+                    : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+                )}
+              >
+                <span className="text-xs">{preset.emoji}</span>
+                <span className={cn("text-[10px] font-medium", selected ? "text-brand" : "text-foreground")}>
                   {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-              Which days
-            </p>
-            <div className="flex gap-1">
-              {dayLabels.map((day) => (
-                <button
-                  key={day.value}
-                  onClick={() => toggleDay(day.value)}
-                  className={cn(
-                    "h-7 w-7 rounded-full text-[11px] font-semibold transition-all",
-                    days.includes(day.value)
-                      ? "bg-brand text-white"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                  )}
-                >
-                  {day.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || times.length === 0}
-            className="gap-1.5 h-8 text-xs"
+                </span>
+              </button>
+            )
+          })}
+          <button
+            onClick={() => { setTimePreset("custom"); setSaved(false) }}
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-xl px-2 py-2 ring-1 transition-all duration-200",
+              timePreset === "custom"
+                ? "ring-brand bg-brand/5"
+                : "ring-foreground/10 hover:ring-foreground/20 hover:bg-muted/40"
+            )}
           >
-            {saving ? (
-              <Restart className="h-3 w-3 animate-spin" />
-            ) : saved ? (
-              <CheckCircle className="h-3 w-3" />
-            ) : null}
-            {saving ? "Saving..." : saved ? "Saved" : "Save reminders"}
-          </Button>
+            <ClockCircle className={cn("h-3.5 w-3.5", timePreset === "custom" ? "text-brand" : "text-muted-foreground")} />
+            <span className={cn("text-[10px] font-medium", timePreset === "custom" ? "text-brand" : "text-foreground")}>
+              Custom
+            </span>
+          </button>
         </div>
-      )}
+
+        {timePreset === "custom" && (
+          <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+            <Input
+              type="time"
+              value={customTime}
+              onChange={(e) => { setCustomTime(e.target.value); setSaved(false) }}
+              className="h-9 rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm text-center"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Day picker */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wide">
+            Which days
+          </p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => { setDays([1, 2, 3, 4, 5]); setSaved(false) }}
+              className={cn(
+                "text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors",
+                days.length === 5 && days.every((d) => d <= 5)
+                  ? "bg-brand/10 text-brand"
+                  : "text-muted-foreground/40 hover:text-muted-foreground"
+              )}
+            >
+              Weekdays
+            </button>
+            <button
+              onClick={() => { setDays([1, 2, 3, 4, 5, 6, 7]); setSaved(false) }}
+              className={cn(
+                "text-[10px] font-medium px-2 py-0.5 rounded-full transition-colors",
+                days.length === 7
+                  ? "bg-brand/10 text-brand"
+                  : "text-muted-foreground/40 hover:text-muted-foreground"
+              )}
+            >
+              Every day
+            </button>
+          </div>
+        </div>
+        <div className="flex gap-1">
+          {dayLabels.map((day) => (
+            <button
+              key={day.value}
+              onClick={() => toggleDay(day.value)}
+              className={cn(
+                "h-7 w-7 rounded-full text-[11px] font-semibold transition-all duration-200",
+                days.includes(day.value)
+                  ? "bg-brand text-white shadow-sm shadow-brand/20"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+              )}
+            >
+              {day.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Button
+        size="sm"
+        onClick={handleSave}
+        disabled={saving}
+        className="gap-1.5 h-8 text-xs rounded-lg"
+      >
+        {saving ? (
+          <Restart className="h-3 w-3 animate-spin" />
+        ) : saved ? (
+          <CheckCircle className="h-3 w-3" />
+        ) : null}
+        {saving ? "Saving..." : saved ? "Saved" : "Save"}
+      </Button>
     </div>
   )
 }

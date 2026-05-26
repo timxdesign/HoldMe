@@ -1,13 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { toast } from "sonner"
 import Link from "next/link"
+import { Letter, Restart, ArrowLeft } from "@solar-icons/react"
 
 function getNextUrl() {
   if (typeof window === "undefined") return "/dashboard"
@@ -15,11 +14,37 @@ function getNextUrl() {
   return params.get("next") ?? "/dashboard"
 }
 
+function FadeUp({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+}) {
+  const [show, setShow] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setShow(true), delay)
+    return () => clearTimeout(t)
+  }, [delay])
+  return (
+    <div
+      className={`transition-all duration-500 ease-out ${
+        show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      } ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [otpSent, setOtpSent] = useState(false)
   const [otp, setOtp] = useState("")
+  const [stepTransition, setStepTransition] = useState(false)
   const supabase = createClient()
 
   async function handleSendOtp(e: React.FormEvent) {
@@ -28,9 +53,7 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        shouldCreateUser: false,
-      },
+      options: { shouldCreateUser: false },
     })
 
     setLoading(false)
@@ -40,7 +63,11 @@ export default function LoginPage() {
       return
     }
 
-    setOtpSent(true)
+    setStepTransition(true)
+    setTimeout(() => {
+      setOtpSent(true)
+      setStepTransition(false)
+    }, 200)
     toast.success("Check your email for the login code")
   }
 
@@ -79,125 +106,143 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getNextUrl())}`,
       },
     })
+    if (error) toast.error(error.message)
+  }
 
-    if (error) {
-      toast.error(error.message)
-    }
+  function handleBack() {
+    setStepTransition(true)
+    setTimeout(() => {
+      setOtpSent(false)
+      setOtp("")
+      setStepTransition(false)
+    }, 200)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-b from-muted/50 to-background">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="text-center space-y-3">
-          <img src="/brand-asset/logo-mark.svg" alt="" className="h-12 w-12 mx-auto" />
-          <h1 className="text-3xl font-bold tracking-tight text-brand">
-            HoldMe
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Stay consistent together
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="w-full max-w-xs space-y-8">
+        {/* Brand */}
+        <FadeUp className="flex flex-col items-center gap-3">
+          <img
+            src="/brand-asset/logo-mark.svg"
+            alt=""
+            className="h-11 w-11 animate-in zoom-in-75 duration-500"
+          />
+          <div className="text-center">
+            <h1 className="text-xl font-semibold tracking-tight">Welcome back</h1>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              Sign in to continue
+            </p>
+          </div>
+        </FadeUp>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <h2 className="text-lg font-semibold text-center">Welcome back</h2>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!otpSent ? (
-              <form onSubmit={handleSendOtp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+        {/* Form area */}
+        <div
+          className={`transition-all duration-200 ease-out ${
+            stepTransition ? "opacity-0 scale-[0.98]" : "opacity-100 scale-100"
+          }`}
+        >
+          {!otpSent ? (
+            <FadeUp delay={80}>
+              <form onSubmit={handleSendOtp} className="space-y-3">
+                <div>
                   <Input
-                    id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="h-11 text-sm rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 placeholder:text-muted-foreground/40"
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Sending..." : "Send login code"}
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="otp">
-                    Enter the code sent to {email}
-                  </Label>
-                  <Input
-                    id="otp"
-                    type="text"
-                    placeholder="123456"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Verifying..." : "Verify code"}
-                </Button>
                 <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setOtpSent(false)}
+                  type="submit"
+                  className="w-full h-11 rounded-xl text-sm font-medium"
+                  disabled={loading || !email.trim()}
                 >
-                  Use a different email
+                  {loading ? (
+                    <Restart className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Letter className="h-4 w-4 mr-2" />
+                      Send login code
+                    </>
+                  )}
                 </Button>
               </form>
-            )}
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
+            </FadeUp>
+          ) : (
+            <div className="space-y-3 animate-in fade-in slide-in-from-right-2 duration-300">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-foreground transition-colors mb-1"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                {email}
+              </button>
+              <form onSubmit={handleVerifyOtp} className="space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Enter 6-digit code"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                  required
+                  autoFocus
+                  className="h-11 text-sm rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 placeholder:text-muted-foreground/40 text-center tracking-[0.3em] font-mono"
+                />
+                <Button
+                  type="submit"
+                  className="w-full h-11 rounded-xl text-sm font-medium"
+                  disabled={loading || otp.length < 6}
+                >
+                  {loading ? (
+                    <Restart className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Verify"
+                  )}
+                </Button>
+              </form>
             </div>
+          )}
+        </div>
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
-              </svg>
-              Google
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Divider */}
+        <FadeUp delay={160}>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-foreground/[0.06]" />
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground/40 font-medium">
+              or
+            </span>
+            <div className="flex-1 h-px bg-foreground/[0.06]" />
+          </div>
+        </FadeUp>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/auth/signup"
-            className="text-brand font-medium hover:underline"
+        {/* Google */}
+        <FadeUp delay={240}>
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full h-11 rounded-xl bg-muted/40 ring-1 ring-foreground/[0.06] hover:ring-foreground/10 hover:bg-muted/60 transition-all text-sm font-medium flex items-center justify-center gap-2.5"
           >
-            Sign up
-          </Link>
-        </p>
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+            </svg>
+            Continue with Google
+          </button>
+        </FadeUp>
+
+        {/* Footer link */}
+        <FadeUp delay={320}>
+          <p className="text-center text-xs text-muted-foreground/50">
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/signup" className="text-brand font-medium hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </FadeUp>
       </div>
     </div>
   )

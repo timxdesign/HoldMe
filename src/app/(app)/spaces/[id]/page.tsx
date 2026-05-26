@@ -1,11 +1,13 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { SpaceHeader } from "@/features/spaces/space-header"
 import { ItemList } from "@/features/items/item-list"
-import { AddItemForm } from "@/features/items/add-item-form"
 import { InviteButton } from "@/features/spaces/invite-button"
 import { StrengthBanner } from "@/features/spaces/strength-banner"
 import { FadeIn } from "@/components/ui/fade-in"
+import { Button } from "@/components/ui/button"
+import { AddCircle } from "@solar-icons/react"
 
 interface SpacePageProps {
   params: Promise<{ id: string }>
@@ -89,7 +91,12 @@ export default async function SpacePage({ params }: SpacePageProps) {
         <FadeIn delay={250} className="mt-5">
           <div className="flex items-center gap-2">
             <InviteButton spaceId={id} />
-            <AddItemForm spaceId={id} />
+            <Button size="sm" variant="outline" className="gap-1.5 rounded-lg" asChild>
+              <Link href={`/create?space=${id}`}>
+                <AddCircle className="h-3.5 w-3.5" />
+                Add
+              </Link>
+            </Button>
           </div>
         </FadeIn>
       )}
