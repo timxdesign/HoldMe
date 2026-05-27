@@ -257,6 +257,17 @@ export function NotificationList({ notifications }: NotificationListProps) {
     markAsRead(n.id)
     const d = n.data as NotificationData | null
     if (n.type === "invite" && d?.invite_id) return
+
+    if (n.type === "comment" && d?.space_id && d?.item_id) {
+      router.push(`/spaces/${d.space_id}/goals/${d.item_id}`)
+      return
+    }
+
+    if (n.type === "strength" && d?.space_id && d?.item_id) {
+      router.push(`/spaces/${d.space_id}/goals/${d.item_id}`)
+      return
+    }
+
     const url = d?.url ?? (d?.space_id ? `/spaces/${d.space_id}` : null)
     if (url) router.push(url)
   }

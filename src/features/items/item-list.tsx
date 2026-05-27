@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useConfetti } from "@/components/effects/confetti"
 import { Button } from "@/components/ui/button"
@@ -17,6 +18,7 @@ import {
   Pause,
   Play,
   Bell,
+  AltArrowRight,
 } from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -118,6 +120,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   const supabase = createClient()
   const fireConfetti = useConfetti()
   const checkBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const router = useRouter()
 
   const handleRealtimeStrength = useCallback(
     (payload: { new: { item_id: string; sender_id: string } }) => {
@@ -395,23 +398,29 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                   </button>
                 )}
 
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={cn(
-                      "text-[14px] leading-tight truncate",
-                      isCompleted
-                        ? "line-through text-muted-foreground"
-                        : "text-foreground"
-                    )}
-                  >
-                    {item.title}
-                  </p>
+                <button
+                  onClick={() => spaceId && router.push(`/spaces/${spaceId}/goals/${item.id}`)}
+                  className="flex-1 min-w-0 text-left group/title"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <p
+                      className={cn(
+                        "text-[14px] leading-tight truncate group-hover/title:text-brand transition-colors",
+                        isCompleted
+                          ? "line-through text-muted-foreground"
+                          : "text-foreground"
+                      )}
+                    >
+                      {item.title}
+                    </p>
+                    <AltArrowRight className="h-3 w-3 text-muted-foreground/0 group-hover/title:text-brand group-hover/title:translate-x-0.5 transition-all shrink-0" />
+                  </div>
                   {ownerName && (
                     <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                       {ownerName}
                     </p>
                   )}
-                </div>
+                </button>
 
                 <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
                   {isOwn && (onCooldown || justCheckedIn) ? (
