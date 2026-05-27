@@ -41,6 +41,7 @@ export function useRealtimeNotifications(userId: string | undefined) {
               duration: 5000,
             })
           } else if (notification.type === "comment") {
+            window.dispatchEvent(new CustomEvent("comment-received"))
             toast(notification.title, {
               description: notification.body,
               icon: "💬",

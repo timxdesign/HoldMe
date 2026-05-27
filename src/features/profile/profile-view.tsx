@@ -2,23 +2,17 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  Camera,
   CheckCircle,
   AltArrowRight,
   Heart,
-  Restart,
   Logout2,
   Pen2,
   Target,
-  Calendar,
 } from "@solar-icons/react"
-import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 const INTERESTS = [
@@ -136,14 +130,10 @@ function FadeUp({ children, delay = 0, className = "" }: { children: React.React
 }
 
 export function ProfileView({ profile, userId, email, stats }: ProfileViewProps) {
-  const [editing, setEditing] = useState(false)
-  const [fullName, setFullName] = useState(profile?.full_name ?? "")
-  const [bio, setBio] = useState(profile?.bio ?? "")
-  const [interests, setInterests] = useState<string[]>(profile?.interests ?? [])
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null)
-  const fileRef = useRef<HTMLInputElement>(null)
+  const fullName = profile?.full_name ?? ""
+  const bio = profile?.bio ?? ""
+  const interests = profile?.interests ?? []
+  const avatarUrl = profile?.avatar_url ?? null
   const router = useRouter()
   const supabase = createClient()
 
@@ -160,74 +150,9 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
 
   const memberDate = new Date(stats.memberSince)
 
-  function toggleInterest(interest: string) {
-    setInterests((prev) =>
-      prev.includes(interest)
-        ? prev.filter((i) => i !== interest)
-        : [...prev, interest]
-    )
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    const { error } = await supabase
-      .from("users")
-      .update({ full_name: fullName, bio: bio || null, interests })
-      .eq("id", userId)
-
-    setSaving(false)
-    if (error) {
-      toast.error(error.message)
-      return
-    }
-    toast.success("Profile updated!")
-    setEditing(false)
-    router.refresh()
-  }
-
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
-    const fileExt = file.name.split(".").pop()
-    const filePath = `${userId}/avatar.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, file, { upsert: true })
-
-    if (uploadError) {
-      toast.error("Upload failed")
-      setUploading(false)
-      return
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(filePath)
-
-    await supabase
-      .from("users")
-      .update({ avatar_url: publicUrl })
-      .eq("id", userId)
-
-    setAvatarUrl(publicUrl + "?t=" + Date.now())
-    setUploading(false)
-    toast.success("Photo updated!")
-    router.refresh()
-  }
-
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push("/auth/login")
-  }
-
-  function cancelEdit() {
-    setFullName(profile?.full_name ?? "")
-    setBio(profile?.bio ?? "")
-    setInterests(profile?.interests ?? [])
-    setEditing(false)
   }
 
   return (
@@ -235,81 +160,35 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
       {/* ── Identity ── */}
       <FadeUp>
         <div className="flex flex-col items-center text-center">
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="group relative mb-4"
-            disabled={uploading}
-          >
-            <Avatar className="h-24 w-24 ring-2 ring-foreground/5 shadow-lg transition-transform duration-300 group-hover:scale-105">
-              <AvatarImage src={avatarUrl ?? undefined} />
-              <AvatarFallback className="text-2xl font-bold bg-brand/10 text-brand">
-                {initials || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-              {uploading ? (
-                <Restart className="h-5 w-5 text-white animate-spin" />
-              ) : (
-                <Camera className="h-5 w-5 text-white" />
-              )}
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
-          </button>
+          <Avatar className="h-24 w-24 ring-2 ring-foreground/5 shadow-lg mb-4">
+            <AvatarImage src={avatarUrl ?? undefined} />
+            <AvatarFallback className="text-2xl font-bold bg-brand/10 text-brand">
+              {initials || "?"}
+            </AvatarFallback>
+          </Avatar>
 
-          {editing ? (
-            <div className="w-full max-w-xs space-y-3 animate-in fade-in duration-200">
-              <Input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your name"
-                className="text-center rounded-xl h-11"
-              />
-              <div>
-                <Textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="What are you working towards?"
-                  rows={2}
-                  className="rounded-xl resize-none text-center text-sm"
-                  maxLength={160}
-                />
-                <p className="text-[10px] text-muted-foreground/40 mt-1">
-                  {bio.length}/160
-                </p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-xl font-bold tracking-tight">
-                {fullName || "Add your name"}
-              </h2>
-              {bio && (
-                <p className="text-sm text-muted-foreground mt-1 max-w-xs leading-relaxed">
-                  {bio}
-                </p>
-              )}
-              <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground/50">
-                <span>{email}</span>
-                <span className="h-1 w-1 rounded-full bg-foreground/10" />
-                <span>
-                  Joined {memberDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                </span>
-              </div>
-              <button
-                onClick={() => setEditing(true)}
-                className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline transition-colors"
-              >
-                <Pen2 className="h-3 w-3" />
-                Edit profile
-              </button>
-            </>
+          <h2 className="text-xl font-bold tracking-tight">
+            {fullName || "Add your name"}
+          </h2>
+          {bio && (
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs leading-relaxed">
+              {bio}
+            </p>
           )}
+          <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground/50">
+            <span>{email}</span>
+            <span className="h-1 w-1 rounded-full bg-foreground/10" />
+            <span>
+              Joined {memberDate.toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+            </span>
+          </div>
+          <Link
+            href="/profile/edit"
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline transition-colors"
+          >
+            <Pen2 className="h-3 w-3" />
+            Edit profile
+          </Link>
         </div>
       </FadeUp>
 
@@ -373,38 +252,17 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
             <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
               Interests
             </h3>
-            {!editing && interests.length > 0 && (
-              <button
-                onClick={() => setEditing(true)}
+            {interests.length > 0 && (
+              <Link
+                href="/profile/edit"
                 className="text-[11px] text-brand font-medium hover:underline"
               >
                 Edit
-              </button>
+              </Link>
             )}
           </div>
 
-          {editing ? (
-            <div className="flex flex-wrap gap-2 animate-in fade-in duration-200">
-              {INTERESTS.map((interest) => {
-                const selected = interests.includes(interest)
-                return (
-                  <button
-                    key={interest}
-                    onClick={() => toggleInterest(interest)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-all duration-200",
-                      selected
-                        ? "ring-brand bg-brand/8 text-brand scale-105"
-                        : "ring-foreground/8 text-muted-foreground hover:ring-foreground/15"
-                    )}
-                  >
-                    <span className="text-sm">{interestEmojis[interest]}</span>
-                    {interest}
-                  </button>
-                )
-              })}
-            </div>
-          ) : interests.length > 0 ? (
+          {interests.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {interests.map((interest, i) => (
                 <span
@@ -418,42 +276,17 @@ export function ProfileView({ profile, userId, email, stats }: ProfileViewProps)
               ))}
             </div>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="w-full py-6 text-center rounded-xl border border-dashed border-foreground/8 hover:border-brand/20 hover:bg-brand/[0.02] transition-colors group"
+            <Link
+              href="/profile/edit"
+              className="block w-full py-6 text-center rounded-xl border border-dashed border-foreground/8 hover:border-brand/20 hover:bg-brand/[0.02] transition-colors group"
             >
               <p className="text-sm text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
                 Add your interests
               </p>
-            </button>
+            </Link>
           )}
         </div>
       </FadeUp>
-
-      {/* ── Edit actions ── */}
-      {editing && (
-        <div className="flex gap-3 animate-in slide-in-from-bottom-3 fade-in duration-300">
-          <Button
-            variant="outline"
-            className="flex-1 rounded-xl h-11"
-            onClick={cancelEdit}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="flex-1 rounded-xl h-11 gap-2"
-            onClick={handleSave}
-            disabled={saving}
-          >
-            {saving ? (
-              <Restart className="h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-            {saving ? "Saving..." : "Save"}
-          </Button>
-        </div>
-      )}
 
       {/* ── Links ── */}
       <FadeUp delay={400}>

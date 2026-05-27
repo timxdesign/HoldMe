@@ -59,11 +59,18 @@ Deno.serve(async (req) => {
     let url = "/notifications";
     if (type === "strength") url = "/notifications";
     if (type === "reminder" && data?.item_id) url = "/notifications";
+    if (type === "comment" && data?.space_id && data?.item_id) {
+      url = `/spaces/${data.space_id}/goals/${data.item_id}`;
+    }
+
+    let tag: string | undefined;
+    if (type === "reminder") tag = `reminder-${data?.item_id}`;
+    if (type === "comment") tag = `comment-${data?.item_id}`;
 
     const payload = {
       title,
       body: notifBody,
-      tag: type === "reminder" ? `reminder-${data?.item_id}` : undefined,
+      tag,
       data: { url, type },
     };
 

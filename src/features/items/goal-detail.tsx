@@ -13,7 +13,6 @@ import { formatDistanceToNow } from "date-fns"
 import {
   ArrowLeft,
   ChatRound,
-  CheckCircle,
   Heart,
   MenuDots,
   Pen2,
@@ -413,12 +412,6 @@ export function GoalDetail({
   const [newCommentIds, setNewCommentIds] = useState<Set<string>>(new Set())
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deletingGoal, setDeletingGoal] = useState(false)
-  const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState(title)
-  const [editDescription, setEditDescription] = useState(description ?? "")
-  const [savingEdit, setSavingEdit] = useState(false)
-  const [localTitle, setLocalTitle] = useState(title)
-  const [localDescription, setLocalDescription] = useState(description)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -592,42 +585,6 @@ export function GoalDetail({
     router.push(`/spaces/${spaceId}`)
   }
 
-  function startEditing() {
-    setEditTitle(localTitle)
-    setEditDescription(localDescription ?? "")
-    setEditing(true)
-    setShowDeleteConfirm(false)
-  }
-
-  async function handleSaveEdit() {
-    const trimmedTitle = editTitle.trim()
-    if (!trimmedTitle) {
-      toast.error("Title can't be empty")
-      return
-    }
-
-    setSavingEdit(true)
-    const { error } = await supabase
-      .from("accountability_items")
-      .update({
-        title: trimmedTitle,
-        description: editDescription.trim() || null,
-      })
-      .eq("id", goalId)
-
-    setSavingEdit(false)
-
-    if (error) {
-      toast.error("Failed to update goal")
-      return
-    }
-
-    setLocalTitle(trimmedTitle)
-    setLocalDescription(editDescription.trim() || null)
-    setEditing(false)
-    toast.success("Goal updated")
-  }
-
   const topLevelComments = comments
     .filter((c) => !c.parentId)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
@@ -656,81 +613,35 @@ export function GoalDetail({
             <Target className="h-4 w-4 text-foreground/60" />
           </div>
 
-          {editing ? (
-            <div className="flex-1 min-w-0 animate-in fade-in duration-200">
-              <div className="space-y-2.5">
-                <input
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  maxLength={80}
-                  placeholder="Goal title"
-                  autoFocus
-                  className="w-full bg-foreground/[0.03] rounded-lg ring-1 ring-foreground/[0.08] px-3 py-2 text-sm font-medium outline-none focus:ring-foreground/20 transition-colors"
-                />
-                <textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  rows={2}
-                  placeholder="Description (optional)"
-                  className="w-full bg-foreground/[0.03] rounded-lg ring-1 ring-foreground/[0.08] px-3 py-2 text-sm outline-none focus:ring-foreground/20 transition-colors resize-none"
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveEdit}
-                    disabled={savingEdit || !editTitle.trim()}
-                    className="h-8 rounded-lg text-xs gap-1.5 px-4"
-                  >
-                    {savingEdit ? (
-                      <Restart className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <CheckCircle className="h-3 w-3" />
-                    )}
-                    {savingEdit ? "Saving..." : "Save"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditing(false)}
-                    disabled={savingEdit}
-                    className="h-8 rounded-lg text-xs text-muted-foreground"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-heading leading-tight">{localTitle}</h1>
-              {localDescription && (
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  {localDescription}
-                </p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-heading leading-tight">{title}</h1>
+            {description && (
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                {description}
+              </p>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-foreground/[0.04] text-muted-foreground">
+                {frequencyLabels[frequency] ?? frequency}
+              </span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-foreground/[0.04] text-muted-foreground capitalize">
+                {status}
+              </span>
+              {!isGoalOwner && (
+                <span className="text-[11px] text-muted-foreground">
+                  by {goalOwnerName}
+                </span>
               )}
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-foreground/[0.04] text-muted-foreground">
-                  {frequencyLabels[frequency] ?? frequency}
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-foreground/[0.04] text-muted-foreground capitalize">
-                  {status}
-                </span>
-                {!isGoalOwner && (
-                  <span className="text-[11px] text-muted-foreground">
-                    by {goalOwnerName}
-                  </span>
-                )}
-              </div>
             </div>
-          )}
+          </div>
 
-          {(isGoalOwner || isSpaceOwner) && !editing && (
+          {(isGoalOwner || isSpaceOwner) && (
             <DropdownMenu>
               <DropdownMenuTrigger className="shrink-0 p-1.5 -mr-1.5 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.04] transition-colors data-popup-open:text-foreground data-popup-open:bg-foreground/[0.04]">
                 <MenuDots className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={4}>
-                <DropdownMenuItem onClick={startEditing}>
+                <DropdownMenuItem onClick={() => router.push(`/spaces/${spaceId}/goals/${goalId}/edit`)}>
                   <Pen2 className="h-3.5 w-3.5" />
                   Edit goal
                 </DropdownMenuItem>
