@@ -18,7 +18,7 @@ export default async function SpacesPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const [{ data: spaces }, { data: strengths }] = await Promise.all([
+  const [{ data: spaces }, { data: strengths }, { data: recentComments }] = await Promise.all([
     supabase
       .from("spaces")
       .select("*, owner:users!owner_id(full_name), space_members(count), accountability_items(count)")
@@ -31,6 +31,11 @@ export default async function SpacesPage() {
         "created_at",
         new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
       ),
+    supabase
+      .from("comments")
+      .select("created_at, accountability_items!inner(space_id)")
+      .order("created_at", { ascending: false })
+      .limit(200),
   ])
 
   const strengthsBySpace = new Map<string, number>()
@@ -39,6 +44,14 @@ export default async function SpacesPage() {
       ?.space_id
     if (spaceId) {
       strengthsBySpace.set(spaceId, (strengthsBySpace.get(spaceId) ?? 0) + 1)
+    }
+  })
+
+  const latestCommentBySpace = new Map<string, string>()
+  recentComments?.forEach((c) => {
+    const spaceId = (c.accountability_items as { space_id: string } | null)?.space_id
+    if (spaceId && !latestCommentBySpace.has(spaceId)) {
+      latestCommentBySpace.set(spaceId, c.created_at)
     }
   })
 
@@ -59,6 +72,7 @@ export default async function SpacesPage() {
                 strengthCount={strengthsBySpace.get(space.id) ?? 0}
                 isOwner={asOwner}
                 ownerName={!asOwner ? (owner?.full_name ?? undefined) : undefined}
+                latestComment={latestCommentBySpace.get(space.id)}
               />
             </FadeIn>
           )

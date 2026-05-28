@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import {
   CheckCircle,
   Heart,
+  ChatRound,
   Target,
   ClockCircle,
   Restart,
@@ -53,6 +54,28 @@ interface ItemListProps {
   spaceId?: string
   memberNames?: Record<string, string>
   lastCheckins?: Record<string, string>
+  commentCounts?: Record<string, number>
+  strengthCounts?: Record<string, number>
+  latestComments?: Record<string, string>
+}
+
+const SEEN_KEY = "holdme-goal-seen"
+
+function getSeenTimestamps(): Record<string, string> {
+  if (typeof localStorage === "undefined") return {}
+  try {
+    return JSON.parse(localStorage.getItem(SEEN_KEY) || "{}")
+  } catch {
+    return {}
+  }
+}
+
+function hasNewComment(goalId: string, latestComment: string | undefined): boolean {
+  if (!latestComment) return false
+  const seen = getSeenTimestamps()
+  const lastSeen = seen[goalId]
+  if (!lastSeen) return true
+  return new Date(latestComment).getTime() > new Date(lastSeen).getTime()
 }
 
 function getNextCheckinTime(frequency: string, lastCheckinAt: string): Date {
@@ -104,7 +127,7 @@ const frequencyLabels: Record<string, string> = {
   one_time: "Once",
 }
 
-export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, memberNames, lastCheckins = {} }: ItemListProps) {
+export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, memberNames, lastCheckins = {}, commentCounts = {}, strengthCounts = {}, latestComments = {} }: ItemListProps) {
   const [localItems, setLocalItems] = useState(items)
   const [sendingStrength, setSendingStrength] = useState<string | null>(null)
   const [sentStrength, setSentStrength] = useState<string | null>(null)
@@ -422,18 +445,35 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                   )}
                 </button>
 
-                <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
-                  {isOwn && (onCooldown || justCheckedIn) ? (
-                    <span className="flex items-center gap-1 text-foreground/60">
-                      <ClockCircle className="h-3 w-3" />
-                      {cooldownLabel || "done"}
+                <div className="shrink-0 flex items-center gap-2.5">
+                  {(commentCounts[item.id] ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums">
+                      {hasNewComment(item.id, latestComments[item.id]) && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand animate-in fade-in duration-300" />
+                      )}
+                      <ChatRound className="h-3 w-3" />
+                      {commentCounts[item.id]}
                     </span>
-                  ) : isPaused ? (
-                    "Paused"
-                  ) : (
-                    freq
                   )}
-                </span>
+                  {(strengthCounts[item.id] ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-pink-500 tabular-nums">
+                      <Heart className="h-3 w-3 fill-current" />
+                      {strengthCounts[item.id]}
+                    </span>
+                  )}
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    {isOwn && (onCooldown || justCheckedIn) ? (
+                      <span className="flex items-center gap-1 text-foreground/60">
+                        <ClockCircle className="h-3 w-3" />
+                        {cooldownLabel || "done"}
+                      </span>
+                    ) : isPaused ? (
+                      "Paused"
+                    ) : (
+                      freq
+                    )}
+                  </span>
+                </div>
 
                 {isOwn && (
                   <DropdownMenu>

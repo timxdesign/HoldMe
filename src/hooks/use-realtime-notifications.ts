@@ -48,6 +48,11 @@ export function useRealtimeNotifications(userId: string | undefined) {
               duration: 5000,
             })
           } else {
+            window.dispatchEvent(
+              new CustomEvent("notification-sound", {
+                detail: { type: notification.type },
+              })
+            )
             toast(notification.title, {
               description: notification.body,
             })

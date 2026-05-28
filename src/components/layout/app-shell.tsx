@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { useRealtimeNotifications } from "@/hooks/use-realtime-notifications"
 import { UnreadCountContext, useUnreadCountValue } from "@/hooks/use-unread-count"
 import { StrengthEffect } from "@/components/effects/strength-effect"
-import { CommentSound } from "@/components/effects/comment-sound"
+import { NotificationSound } from "@/components/effects/notification-sound"
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -25,7 +25,7 @@ export function AppShell({ children, userId }: { children: React.ReactNode; user
     <UnreadCountContext value={unreadCount}>
     <div className="flex min-h-screen">
       <StrengthEffect />
-      <CommentSound />
+      <NotificationSound />
       <aside className="hidden md:flex md:w-56 md:flex-col md:fixed md:inset-y-0 border-r bg-sidebar">
         <div className="flex items-center h-14 px-5 border-b">
           <Link href="/dashboard" className="flex items-center gap-2 text-lg font-bold text-brand">

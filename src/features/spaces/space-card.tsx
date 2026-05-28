@@ -22,6 +22,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { toast } from "sonner"
 
+const SPACE_SEEN_KEY = "holdme-space-seen"
+
+function hasNewSpaceComment(spaceId: string, latestComment: string | undefined): boolean {
+  if (!latestComment || typeof localStorage === "undefined") return false
+  try {
+    const seen = JSON.parse(localStorage.getItem(SPACE_SEEN_KEY) || "{}")
+    const lastSeen = seen[spaceId]
+    if (!lastSeen) return true
+    return new Date(latestComment).getTime() > new Date(lastSeen).getTime()
+  } catch {
+    return false
+  }
+}
+
 interface SpaceCardProps {
   space: {
     id: string
@@ -36,9 +50,10 @@ interface SpaceCardProps {
   strengthCount?: number
   ownerName?: string
   isOwner?: boolean
+  latestComment?: string
 }
 
-export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false }: SpaceCardProps) {
+export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false, latestComment }: SpaceCardProps) {
   const firstMember = space.space_members?.[0]
   const memberCount = typeof firstMember?.count === "number"
     ? firstMember.count
@@ -54,7 +69,14 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
   const router = useRouter()
   const supabase = createClient()
 
+  const showNewIndicator = hasNewSpaceComment(space.id, latestComment)
+
   function handleNavigate() {
+    try {
+      const seen = JSON.parse(localStorage.getItem(SPACE_SEEN_KEY) || "{}")
+      seen[space.id] = new Date().toISOString()
+      localStorage.setItem(SPACE_SEEN_KEY, JSON.stringify(seen))
+    } catch {}
     router.push(`/spaces/${space.id}`)
   }
 
@@ -82,6 +104,9 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
+              {showNewIndicator && (
+                <span className="shrink-0 h-2 w-2 rounded-full bg-brand animate-in fade-in duration-300" />
+              )}
               <h3 className="font-semibold text-[15px] truncate group-hover:text-foreground transition-colors">
                 {space.name}
               </h3>

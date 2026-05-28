@@ -52,6 +52,36 @@ export default async function SpacePage({ params }: SpacePageProps) {
     notFound()
   }
 
+  const itemIds = (items ?? []).map((i) => i.id)
+
+  const [{ data: allComments }, { data: allStrengths }] = itemIds.length > 0
+    ? await Promise.all([
+        supabase
+          .from("comments")
+          .select("item_id, created_at")
+          .in("item_id", itemIds)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("strengths")
+          .select("item_id")
+          .in("item_id", itemIds),
+      ])
+    : [{ data: [] }, { data: [] }]
+
+  const commentCountMap: Record<string, number> = {}
+  const latestCommentMap: Record<string, string> = {}
+  for (const c of allComments ?? []) {
+    commentCountMap[c.item_id] = (commentCountMap[c.item_id] ?? 0) + 1
+    if (!latestCommentMap[c.item_id]) {
+      latestCommentMap[c.item_id] = c.created_at
+    }
+  }
+
+  const strengthCountMap: Record<string, number> = {}
+  for (const s of allStrengths ?? []) {
+    strengthCountMap[s.item_id] = (strengthCountMap[s.item_id] ?? 0) + 1
+  }
+
   const isOwner = space.owner_id === user?.id
   const memberCount = members?.length ?? 0
 
@@ -115,6 +145,9 @@ export default async function SpacePage({ params }: SpacePageProps) {
           spaceId={id}
           memberNames={memberNameMap as Record<string, string>}
           lastCheckins={lastCheckinMap}
+          commentCounts={commentCountMap}
+          strengthCounts={strengthCountMap}
+          latestComments={latestCommentMap}
         />
       </FadeIn>
     </div>

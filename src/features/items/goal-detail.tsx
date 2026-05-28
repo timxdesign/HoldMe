@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import { EmojiPicker } from "@/components/ui/emoji-picker"
 
 interface Comment {
   id: string
@@ -212,7 +213,7 @@ function InlineReplyInput({
             {getInitials(currentUserName)}
           </AvatarFallback>
         </Avatar>
-        <div className="flex-1 min-w-0 flex items-start gap-2">
+        <div className="flex-1 min-w-0 flex items-center gap-1">
           <textarea
             ref={inputRef}
             value={value}
@@ -228,11 +229,14 @@ function InlineReplyInput({
             className="w-full bg-transparent text-[14px] outline-none resize-none placeholder:text-muted-foreground/40 py-1.5 leading-relaxed"
             autoFocus
           />
+          <EmojiPicker
+            onSelect={(emoji) => onChange(value + emoji)}
+          />
           <Button
             size="sm"
             onClick={onSubmit}
             disabled={!value.trim() || posting}
-            className="h-8 rounded-full text-xs px-4 shrink-0 mt-0.5"
+            className="h-8 rounded-full text-xs px-4 shrink-0"
           >
             {posting ? <Restart className="h-3 w-3 animate-spin" /> : "Reply"}
           </Button>
@@ -419,6 +423,15 @@ export function GoalDetail({
   const currentUserName = memberMap[currentUserId]?.name ?? "You"
   const myStrengthCount = strengths.filter((s) => s.senderId === currentUserId).length
   const totalStrengthCount = strengths.length
+
+  useEffect(() => {
+    try {
+      const key = "holdme-goal-seen"
+      const seen = JSON.parse(localStorage.getItem(key) || "{}")
+      seen[goalId] = new Date().toISOString()
+      localStorage.setItem(key, JSON.stringify(seen))
+    } catch {}
+  }, [goalId])
 
   const handleRealtimeComment = useCallback(
     (payload: { new: { id: string; user_id: string; content: string; parent_id: string | null; created_at: string; item_id: string } }) => {
@@ -761,7 +774,7 @@ export function GoalDetail({
                 {getInitials(currentUserName)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0 flex items-center gap-2">
+            <div className="flex-1 min-w-0 flex items-center gap-1">
               <textarea
                 ref={replyTo ? undefined : inputRef}
                 value={replyTo ? "" : newComment}
@@ -776,6 +789,9 @@ export function GoalDetail({
                 placeholder="Write a comment..."
                 rows={1}
                 className="w-full bg-transparent text-[14px] outline-none resize-none placeholder:text-muted-foreground/40 py-0.5 leading-relaxed"
+              />
+              <EmojiPicker
+                onSelect={(emoji) => { if (!replyTo) setNewComment((prev) => prev + emoji) }}
               />
               <Button
                 size="sm"

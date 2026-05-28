@@ -2,7 +2,7 @@ self.addEventListener("push", (event) => {
   if (!event.data) return;
 
   const payload = event.data.json();
-  const isComment = payload.data?.type === "comment";
+  const notifType = payload.data?.type;
 
   event.waitUntil(
     self.clients
@@ -12,9 +12,12 @@ self.addEventListener("push", (event) => {
 
         if (focused) return;
 
-        if (isComment && clients.length > 0) {
+        if (clients.length > 0) {
           clients.forEach((c) =>
-            c.postMessage({ type: "play-comment-sound" })
+            c.postMessage({
+              type: "play-notification-sound",
+              notificationType: notifType,
+            })
           );
         }
 
@@ -25,7 +28,7 @@ self.addEventListener("push", (event) => {
           data: payload.data || { url: "/notifications" },
           tag: payload.tag || undefined,
           renotify: !!payload.tag,
-          silent: isComment && clients.length > 0,
+          silent: clients.length > 0,
         });
       })
   );
