@@ -40,11 +40,22 @@ export function useRealtimeNotifications(userId: string | undefined) {
               icon: "💪",
               duration: 5000,
             })
-          } else if (notification.type === "comment") {
+          } else if (notification.type === "comment" || notification.type === "circle_comment" || notification.type === "circle_mention") {
             window.dispatchEvent(new CustomEvent("comment-received"))
             toast(notification.title, {
               description: notification.body,
-              icon: "💬",
+              icon: notification.type === "circle_mention" ? "📣" : "💬",
+              duration: 5000,
+            })
+          } else if (notification.type === "circle_strength") {
+            window.dispatchEvent(
+              new CustomEvent("strength-received", {
+                detail: { senderName: notification.data?.sender_name ?? "Someone" },
+              })
+            )
+            toast(notification.title, {
+              description: notification.body,
+              icon: "💪",
               duration: 5000,
             })
           } else {

@@ -42,6 +42,36 @@ export default async function CirclePage({ params }: CirclePageProps) {
     notFound()
   }
 
+  const goalIds = (goals ?? []).map((g) => g.id)
+
+  const [{ data: allComments }, { data: allStrengths }] = goalIds.length > 0
+    ? await Promise.all([
+        supabase
+          .from("circle_comments")
+          .select("goal_id, created_at")
+          .in("goal_id", goalIds)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("circle_strengths")
+          .select("goal_id")
+          .in("goal_id", goalIds),
+      ])
+    : [{ data: [] }, { data: [] }]
+
+  const commentCountMap: Record<string, number> = {}
+  const latestCommentMap: Record<string, string> = {}
+  for (const c of allComments ?? []) {
+    commentCountMap[c.goal_id] = (commentCountMap[c.goal_id] ?? 0) + 1
+    if (!latestCommentMap[c.goal_id]) {
+      latestCommentMap[c.goal_id] = c.created_at
+    }
+  }
+
+  const strengthCountMap: Record<string, number> = {}
+  for (const s of allStrengths ?? []) {
+    strengthCountMap[s.goal_id] = (strengthCountMap[s.goal_id] ?? 0) + 1
+  }
+
   const isOwner = circle.created_by === user?.id
   const memberMap: Record<string, string> = {}
   for (const m of members ?? []) {
@@ -59,6 +89,9 @@ export default async function CirclePage({ params }: CirclePageProps) {
         recentCheckins={recentCheckins ?? []}
         currentUserId={user?.id ?? ""}
         isOwner={isOwner}
+        commentCounts={commentCountMap}
+        strengthCounts={strengthCountMap}
+        latestComments={latestCommentMap}
       />
     </>
   )

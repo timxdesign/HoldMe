@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { TopBar } from "@/components/layout/top-bar"
 import { FadeIn } from "@/components/ui/fade-in"
 import Link from "next/link"
-import { AddCircle, Record, UsersGroupTwoRounded, Target } from "@solar-icons/react"
+import { AddCircle, Record } from "@solar-icons/react"
 import { Button } from "@/components/ui/button"
+import { CircleCard } from "@/features/circles/circle-card"
 
 export const metadata = {
   title: "Circles",
@@ -29,20 +30,17 @@ export default async function CirclesPage() {
 
   const circleIds = circles.map((c) => c.id)
 
-  const { data: memberCounts } = circleIds.length > 0
-    ? await supabase
-        .from("circle_members")
-        .select("circle_id")
-        .in("circle_id", circleIds)
-    : { data: [] }
-
-  const { data: goalCounts } = circleIds.length > 0
-    ? await supabase
-        .from("circle_goals")
-        .select("circle_id")
-        .in("circle_id", circleIds)
-        .eq("status", "active")
-    : { data: [] }
+  const [{ data: memberCounts }, { data: goalCounts }, { data: recentComments }] = circleIds.length > 0
+    ? await Promise.all([
+        supabase.from("circle_members").select("circle_id").in("circle_id", circleIds),
+        supabase.from("circle_goals").select("circle_id").in("circle_id", circleIds).eq("status", "active"),
+        supabase
+          .from("circle_comments")
+          .select("created_at, circle_goals!inner(circle_id)")
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }]
 
   const countMap = (arr: { circle_id: string }[] | null) => {
     const map: Record<string, number> = {}
@@ -54,6 +52,14 @@ export default async function CirclesPage() {
 
   const members = countMap(memberCounts)
   const goals = countMap(goalCounts)
+
+  const latestCommentByCircle = new Map<string, string>()
+  recentComments?.forEach((c) => {
+    const circleId = (c.circle_goals as { circle_id: string } | null)?.circle_id
+    if (circleId && !latestCommentByCircle.has(circleId)) {
+      latestCommentByCircle.set(circleId, c.created_at)
+    }
+  })
 
   return (
     <>
@@ -75,45 +81,16 @@ export default async function CirclesPage() {
 
         {circles.length > 0 ? (
           <div className="mt-8 grid gap-3">
-            {circles.map((circle, index) => {
-              const memberCount = members[circle.id] ?? 0
-              const goalCount = goals[circle.id] ?? 0
-
-              return (
-                <FadeIn key={circle.id} delay={index * 60}>
-                  <Link
-                    href={`/circles/${circle.id}`}
-                    className="group flex items-center gap-3.5 rounded-xl ring-1 ring-foreground/[0.06] p-4 transition-all duration-200 hover:ring-foreground/15 hover:bg-muted/30"
-                  >
-                    <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-muted/50 text-lg shrink-0 transition-transform duration-300 group-hover:scale-105">
-                      {circle.emoji}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[15px] truncate">
-                          {circle.name}
-                        </h3>
-                        {circle.role === "owner" && (
-                          <span className="shrink-0 text-[10px] font-semibold text-brand/70 bg-brand/8 rounded-full px-2 py-0.5">
-                            Owner
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <UsersGroupTwoRounded className="h-3 w-3" />
-                          {memberCount}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Target className="h-3 w-3" />
-                          {goalCount}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                </FadeIn>
-              )
-            })}
+            {circles.map((circle, index) => (
+              <FadeIn key={circle.id} delay={index * 60}>
+                <CircleCard
+                  circle={circle}
+                  memberCount={members[circle.id] ?? 0}
+                  goalCount={goals[circle.id] ?? 0}
+                  latestComment={latestCommentByCircle.get(circle.id)}
+                />
+              </FadeIn>
+            ))}
           </div>
         ) : (
           <FadeIn delay={150} className="mt-12">

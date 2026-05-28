@@ -541,6 +541,9 @@ export type Database = {
           id: string
           circle_id: string
           title: string
+          description: string | null
+          type: string
+          frequency: string
           created_by: string
           status: string
           created_at: string
@@ -549,6 +552,9 @@ export type Database = {
           id?: string
           circle_id: string
           title: string
+          description?: string | null
+          type?: string
+          frequency?: string
           created_by: string
           status?: string
           created_at?: string
@@ -557,6 +563,9 @@ export type Database = {
           id?: string
           circle_id?: string
           title?: string
+          description?: string | null
+          type?: string
+          frequency?: string
           created_by?: string
           status?: string
           created_at?: string
@@ -611,6 +620,87 @@ export type Database = {
           {
             foreignKeyName: "circle_checkins_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      circle_comments: {
+        Row: {
+          id: string
+          goal_id: string
+          user_id: string
+          content: string
+          parent_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          goal_id: string
+          user_id: string
+          content: string
+          parent_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          goal_id?: string
+          user_id?: string
+          content?: string
+          parent_id?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_comments_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "circle_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      circle_strengths: {
+        Row: {
+          id: string
+          goal_id: string
+          sender_id: string
+          message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          goal_id: string
+          sender_id: string
+          message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          goal_id?: string
+          sender_id?: string
+          message?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_strengths_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "circle_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_strengths_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

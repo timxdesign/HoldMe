@@ -74,6 +74,9 @@ const typeConfig: Record<string, {
   checkin: { icon: CheckCircle, color: "text-green-500", bg: "bg-green-500/8" },
   missed: { icon: DangerCircle, color: "text-red-400", bg: "bg-red-500/8" },
   circle_checkin: { icon: Record, color: "text-teal-500", bg: "bg-teal-500/8" },
+  circle_comment: { icon: ChatRound, color: "text-brand", bg: "bg-brand/8" },
+  circle_strength: { icon: Heart, color: "text-pink-500", bg: "bg-pink-500/8" },
+  circle_mention: { icon: ChatRound, color: "text-yellow-500", bg: "bg-yellow-500/8" },
 }
 
 const defaultConfig = { icon: ClockCircle, color: "text-muted-foreground", bg: "bg-muted" }
@@ -91,6 +94,11 @@ function getGroupKey(n: Notification): string {
       return d?.circle_id ? `circle_checkin:${d.circle_id}` : `circle_checkin:${n.id}`
     case "comment":
       return d?.item_id ? `comment:${d.item_id}` : `comment:${n.id}`
+    case "circle_comment":
+    case "circle_mention":
+      return d?.goal_id ? `circle_comment:${d.goal_id}` : `circle_comment:${n.id}`
+    case "circle_strength":
+      return d?.goal_id ? `circle_strength:${d.goal_id}` : `circle_strength:${n.id}`
     case "missed":
       return d?.item_id ? `missed:${d.item_id}` : `missed:${n.id}`
     default:
@@ -156,8 +164,15 @@ function getGroupSummary(group: GroupedNotification): { title: string; body: str
         body: first.body,
       }
     case "comment":
+    case "circle_comment":
+    case "circle_mention":
       return {
         title: `${nameStr} commented`,
+        body: context ? `On ${context}` : "",
+      }
+    case "circle_strength":
+      return {
+        title: `${nameStr} sent strength`,
         body: context ? `On ${context}` : "",
       }
     case "missed":
@@ -265,6 +280,11 @@ export function NotificationList({ notifications }: NotificationListProps) {
 
     if (n.type === "strength" && d?.space_id && d?.item_id) {
       router.push(`/spaces/${d.space_id}/goals/${d.item_id}`)
+      return
+    }
+
+    if ((n.type === "circle_comment" || n.type === "circle_mention" || n.type === "circle_strength") && d?.circle_id && d?.goal_id) {
+      router.push(`/circles/${d.circle_id}/goals/${d.goal_id}`)
       return
     }
 
