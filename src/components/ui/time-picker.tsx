@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 
 interface TimePickerProps {
@@ -27,46 +27,28 @@ function formatTime(time: string): string {
 
 export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 })
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const pickerRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
   const hourRef = useRef<HTMLDivElement>(null)
   const minuteRef = useRef<HTMLDivElement>(null)
 
   const [h, m] = (value || "09:00").split(":").map(Number)
 
-  const handleClickOutside = useCallback((e: MouseEvent) => {
-    if (triggerRef.current?.contains(e.target as Node)) return
-    if (pickerRef.current?.contains(e.target as Node)) return
-    setOpen(false)
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === backdropRef.current) setOpen(false)
   }, [])
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside)
-      return () => document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [open, handleClickOutside])
-
-  useLayoutEffect(() => {
-    if (open && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect()
-      const spaceBelow = window.innerHeight - rect.bottom
-      const pickerHeight = 270
-      const top = spaceBelow >= pickerHeight
-        ? rect.bottom + 8
-        : rect.top - pickerHeight - 8
-      setPos({ top: Math.max(8, top), left: rect.left, width: rect.width })
-    }
+    if (!open) return
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false) }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
   }, [open])
 
   useEffect(() => {
     if (open) {
       setTimeout(() => {
-        const hourEl = hourRef.current?.querySelector("[data-selected]")
-        hourEl?.scrollIntoView({ block: "center", behavior: "instant" })
-        const minEl = minuteRef.current?.querySelector("[data-selected]")
-        minEl?.scrollIntoView({ block: "center", behavior: "instant" })
+        hourRef.current?.querySelector("[data-selected]")?.scrollIntoView({ block: "center", behavior: "instant" })
+        minuteRef.current?.querySelector("[data-selected]")?.scrollIntoView({ block: "center", behavior: "instant" })
       }, 50)
     }
   }, [open])
@@ -82,7 +64,6 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
   return (
     <div className={cn("relative", className)}>
       <button
-        ref={triggerRef}
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
@@ -96,14 +77,22 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
 
       {open && (
         <div
-          ref={pickerRef}
-          className="fixed z-[60] animate-in fade-in zoom-in-95 duration-150"
-          style={{ top: pos.top, left: pos.left, width: Math.max(pos.width, 240) }}
+          ref={backdropRef}
+          onClick={handleBackdropClick}
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-150"
         >
-          <div className="rounded-2xl bg-card shadow-xl ring-1 ring-foreground/10 overflow-hidden">
-            <div className="flex h-[220px]">
+          <div className="w-full max-w-[280px] mx-4 mb-4 sm:mb-0 rounded-2xl bg-card shadow-2xl ring-1 ring-foreground/10 overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-4 pt-3.5 pb-2">
+              <p className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wide">Select time</p>
+              <p className="text-2xl font-semibold tabular-nums mt-1">
+                {formatTime(value || "09:00")}
+              </p>
+            </div>
+
+            <div className="flex h-[200px] border-t border-foreground/[0.04]">
               {/* Hours */}
-              <div ref={hourRef} className="flex-1 overflow-y-auto py-2 scrollbar-thin">
+              <div ref={hourRef} className="flex-1 overflow-y-auto py-1 overscroll-contain">
                 {HOURS.map((hour) => {
                   const selected = hour === h
                   return (
@@ -113,7 +102,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                       data-selected={selected || undefined}
                       onClick={() => setHour(hour)}
                       className={cn(
-                        "w-full px-4 py-2 text-sm text-center transition-colors",
+                        "w-full px-4 py-2.5 text-sm text-center transition-colors active:scale-95",
                         selected
                           ? "bg-brand/10 text-brand font-semibold"
                           : "text-foreground/70 hover:bg-muted/50"
@@ -128,7 +117,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
               <div className="w-px bg-foreground/[0.06]" />
 
               {/* Minutes */}
-              <div ref={minuteRef} className="flex-1 overflow-y-auto py-2 scrollbar-thin">
+              <div ref={minuteRef} className="flex-1 overflow-y-auto py-1 overscroll-contain">
                 {MINUTES.map((min) => {
                   const selected = min === m
                   return (
@@ -138,7 +127,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
                       data-selected={selected || undefined}
                       onClick={() => setMinute(min)}
                       className={cn(
-                        "w-full px-4 py-2 text-sm text-center transition-colors",
+                        "w-full px-4 py-2.5 text-sm text-center transition-colors active:scale-95",
                         selected
                           ? "bg-brand/10 text-brand font-semibold"
                           : "text-foreground/70 hover:bg-muted/50"
@@ -151,14 +140,19 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
               </div>
             </div>
 
-            <div className="border-t border-foreground/[0.04] px-4 py-2.5 flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground">
-                {formatTime(value || "09:00")}
-              </span>
+            {/* Footer */}
+            <div className="border-t border-foreground/[0.04] px-4 py-3 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-xs font-medium text-brand hover:underline transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-sm font-medium text-brand hover:text-brand/80 transition-colors"
               >
                 Done
               </button>
