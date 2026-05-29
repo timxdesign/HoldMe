@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { DatePicker } from "@/components/ui/date-picker"
+import { TimePicker } from "@/components/ui/time-picker"
 import {
   Target,
   CheckSquare,
@@ -562,13 +564,11 @@ export function CreateItemPage({ spaceId }: CreateItemPageProps) {
             </div>
             {form.goal.deadlinePreset === "custom" && (
               <div className="animate-in fade-in slide-in-from-bottom-1 duration-200">
-                <Input
-                  type="date"
-                  aria-label="Goal deadline"
+                <DatePicker
                   value={form.goal.deadline || ""}
-                  onChange={e => updateGoal({ deadline: e.target.value })}
+                  onChange={(d) => updateGoal({ deadline: d })}
                   min={todayStr}
-                  className="h-12 rounded-xl bg-muted/30 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm"
+                  placeholder="Pick a deadline"
                 />
               </div>
             )}
@@ -628,13 +628,11 @@ export function CreateItemPage({ spaceId }: CreateItemPageProps) {
         {form.type === "task" && (
           <div key="task-spine" className="animate-reveal space-y-4">
             <h2 className="text-xl">When&apos;s it due?</h2>
-            <Input
-              type="date"
-              aria-label="Task due date"
+            <DatePicker
               value={form.task.dueDate || ""}
-              onChange={e => updateTask({ dueDate: e.target.value })}
+              onChange={(d) => updateTask({ dueDate: d })}
               min={todayStr}
-              className="h-12 rounded-xl bg-muted/30 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm"
+              placeholder="Pick a due date"
             />
           </div>
         )}
@@ -666,13 +664,11 @@ export function CreateItemPage({ spaceId }: CreateItemPageProps) {
             {form.commitment.mode === "one_time" && (
               <div className="animate-in fade-in slide-in-from-bottom-1 duration-200 space-y-2">
                 <p className="text-sm text-muted-foreground">When?</p>
-                <Input
-                  type="date"
-                  aria-label="Commitment date"
+                <DatePicker
                   value={form.commitment.date || ""}
-                  onChange={e => updateCommitment({ date: e.target.value })}
+                  onChange={(d) => updateCommitment({ date: d })}
                   min={todayStr}
-                  className="h-12 rounded-xl bg-muted/30 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm"
+                  placeholder="Pick a date"
                 />
               </div>
             )}
@@ -865,12 +861,9 @@ export function CreateItemPage({ spaceId }: CreateItemPageProps) {
                     </div>
                     {form.reminder.timeOfDay === "custom" && (
                       <div className="animate-in fade-in slide-in-from-bottom-1 duration-200">
-                        <Input
-                          type="time"
-                          aria-label="Custom reminder time"
+                        <TimePicker
                           value={form.reminder.customTime || "09:00"}
-                          onChange={e => updateReminder({ customTime: e.target.value })}
-                          className="h-11 rounded-xl bg-muted/30 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm text-center"
+                          onChange={(t) => updateReminder({ customTime: t })}
                         />
                       </div>
                     )}

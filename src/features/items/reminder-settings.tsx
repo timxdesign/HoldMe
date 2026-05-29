@@ -4,6 +4,7 @@ import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { TimePicker } from "@/components/ui/time-picker"
 import { Restart, CheckCircle, ClockCircle } from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -134,11 +135,9 @@ export function ReminderSettings({ itemId, currentSchedule }: ReminderSettingsPr
 
         {timePreset === "custom" && (
           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-            <Input
-              type="time"
+            <TimePicker
               value={customTime}
-              onChange={(e) => { setCustomTime(e.target.value); setSaved(false) }}
-              className="h-9 rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm text-center"
+              onChange={(t) => { setCustomTime(t); setSaved(false) }}
             />
           </div>
         )}

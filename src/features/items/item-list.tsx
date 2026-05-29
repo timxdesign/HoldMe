@@ -23,6 +23,7 @@ import {
 } from "@solar-icons/react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ReminderSettings } from "./reminder-settings"
 import {
   DropdownMenu,
@@ -134,6 +135,7 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
   const [receivedFlash, setReceivedFlash] = useState<Map<string, string>>(new Map())
   const [checkedIn, setCheckedIn] = useState<Set<string>>(new Set())
   const [localCheckins, setLocalCheckins] = useState<Record<string, string>>(lastCheckins)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState("")
@@ -520,15 +522,11 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
-                        onClick={() => handleDelete(item.id)}
+                        onClick={() => setConfirmDeleteId(item.id)}
                         disabled={deletingId === item.id}
                       >
-                        {deletingId === item.id ? (
-                          <Restart className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <TrashBinTrash className="h-3.5 w-3.5" />
-                        )}
-                        {deletingId === item.id ? "Deleting..." : "Delete"}
+                        <TrashBinTrash className="h-3.5 w-3.5" />
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -587,10 +585,20 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
                   />
                 </div>
               )}
+
             </div>
           )
         })}
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteId(null) }}
+        title="Delete this goal?"
+        description="This will permanently remove the goal and all its data. This can't be undone."
+        loading={deletingId !== null}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId) }}
+      />
     </div>
   )
 }

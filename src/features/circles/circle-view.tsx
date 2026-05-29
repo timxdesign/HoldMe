@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface CircleViewProps {
   circle: {
@@ -98,6 +99,8 @@ export function CircleView({
   const [checkins, setCheckins] = useState(initialCheckins)
   const [checkingIn, setCheckingIn] = useState<string | null>(null)
   const [justChecked, setJustChecked] = useState<Set<string>>(new Set())
+  const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState<string | null>(null)
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null)
   const [showInvite, setShowInvite] = useState(false)
   const [inviteLink, setInviteLink] = useState("")
   const fireConfetti = useConfetti()
@@ -137,9 +140,12 @@ export function CircleView({
   }
 
   async function handleDeleteGoal(goalId: string) {
+    setDeletingGoalId(goalId)
     const { error } = await supabase.from("circle_goals").delete().eq("id", goalId)
+    setDeletingGoalId(null)
     if (error) { toast.error("Failed to delete"); return }
     setGoals(goals.filter((g) => g.id !== goalId))
+    setConfirmDeleteGoalId(null)
     toast.success("Goal removed")
   }
 
@@ -303,7 +309,7 @@ export function CircleView({
                     </div>
 
                     {canDelete && (
-                      <button onClick={() => handleDeleteGoal(goal.id)} className="p-1.5 rounded-lg text-muted-foreground/30 hover:text-red-500 hover:bg-red-500/5 transition-colors">
+                      <button onClick={() => setConfirmDeleteGoalId(goal.id)} className="p-1.5 rounded-lg text-muted-foreground/30 hover:text-red-500 hover:bg-red-500/5 transition-colors">
                         <TrashBinTrash className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -363,6 +369,15 @@ export function CircleView({
           </div>
         </section>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteGoalId !== null}
+        onOpenChange={(open) => { if (!open) setConfirmDeleteGoalId(null) }}
+        title="Delete this goal?"
+        description="This will permanently remove the goal and all its data. This can't be undone."
+        loading={deletingGoalId !== null}
+        onConfirm={() => { if (confirmDeleteGoalId) handleDeleteGoal(confirmDeleteGoalId) }}
+      />
     </div>
   )
 }

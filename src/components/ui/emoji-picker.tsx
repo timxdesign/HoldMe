@@ -72,7 +72,7 @@ export function EmojiPicker({ onSelect, className }: EmojiPickerProps) {
         </svg>
       </button>
       {open && (
-        <div className="absolute bottom-full right-0 mb-2 z-50 animate-in fade-in zoom-in-95 duration-150 origin-bottom-right [&>em-emoji-picker]:!border-foreground/10 [&>em-emoji-picker]:!rounded-xl [&>em-emoji-picker]:!shadow-xl">
+        <div className="absolute top-full right-0 mt-2 z-50 animate-in fade-in zoom-in-95 duration-150 origin-top-right [&>em-emoji-picker]:!border-foreground/10 [&>em-emoji-picker]:!rounded-xl [&>em-emoji-picker]:!shadow-xl">
           <Suspense
             fallback={
               <div className="w-[352px] h-[400px] rounded-xl bg-card ring-1 ring-foreground/10 shadow-xl flex items-center justify-center">

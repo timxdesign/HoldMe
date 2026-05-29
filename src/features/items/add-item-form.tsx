@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { TimePicker } from "@/components/ui/time-picker"
 import {
   Dialog,
   DialogContent,
@@ -428,11 +429,9 @@ export function AddItemForm({ spaceId }: AddItemFormProps) {
 
                         {timePreset === "custom" && (
                           <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                            <Input
-                              type="time"
+                            <TimePicker
                               value={customTime}
-                              onChange={(e) => setCustomTime(e.target.value)}
-                              className="h-10 rounded-xl bg-muted/40 border-0 ring-1 ring-foreground/[0.06] focus-visible:ring-brand/40 text-sm text-center"
+                              onChange={(t) => setCustomTime(t)}
                             />
                           </div>
                         )}

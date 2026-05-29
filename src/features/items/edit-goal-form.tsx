@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { DatePicker } from "@/components/ui/date-picker"
 import { FadeIn } from "@/components/ui/fade-in"
 import { ArrowLeft, Restart, Target } from "@solar-icons/react"
 import { toast } from "sonner"
@@ -184,12 +185,10 @@ export function EditGoalForm({
             <label htmlFor="goal-due" className="text-sm font-medium">
               Due date <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
-            <Input
-              id="goal-due"
-              type="date"
+            <DatePicker
               value={editDueDate}
-              onChange={(e) => setEditDueDate(e.target.value)}
-              className="h-11 rounded-xl"
+              onChange={(d) => setEditDueDate(d)}
+              placeholder="Pick a due date"
             />
             {editDueDate && (
               <button

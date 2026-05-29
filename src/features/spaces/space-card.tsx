@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import {
   UsersGroupTwoRounded,
   Heart,
@@ -63,6 +65,7 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
     ? firstItem.count
     : space.accountability_items?.length ?? 0
 
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleted, setDeleted] = useState(false)
 
@@ -139,15 +142,10 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     variant="destructive"
-                    onClick={handleDelete}
-                    disabled={deleting}
+                    onClick={() => setConfirmDelete(true)}
                   >
-                    {deleting ? (
-                      <Restart className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <TrashBinTrash className="h-3.5 w-3.5" />
-                    )}
-                    {deleting ? "Deleting..." : "Delete space"}
+                    <TrashBinTrash className="h-3.5 w-3.5" />
+                    Delete space
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -182,7 +180,18 @@ export function SpaceCard({ space, strengthCount = 0, ownerName, isOwner = false
             </span>
           )}
         </div>
+
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this space?"
+        description="This will permanently remove the space, all goals, comments, and strength data. This can't be undone."
+        confirmLabel="Yes, delete space"
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }
