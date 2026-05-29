@@ -6,6 +6,7 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { ArrowLeft, Restart, Record } from "@solar-icons/react"
 
@@ -13,6 +14,7 @@ const emojis = ["🎯", "💪", "📚", "🏃", "🧘", "✍️", "🌱", "🔥"
 
 export default function NewCirclePage() {
   const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
   const [emoji, setEmoji] = useState("🎯")
   const [loading, setLoading] = useState(false)
   const [visible, setVisible] = useState(false)
@@ -37,7 +39,12 @@ export default function NewCirclePage() {
 
     const { data: circle, error } = await supabase
       .from("circles")
-      .insert({ name: name.trim(), emoji, created_by: user.id })
+      .insert({
+        name: name.trim(),
+        emoji,
+        description: description.trim() || null,
+        created_by: user.id,
+      })
       .select()
       .single()
 
@@ -120,6 +127,26 @@ export default function NewCirclePage() {
               required
               maxLength={60}
               className="h-10"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="description" className="text-sm font-medium">
+                Description <span className="text-muted-foreground/50 font-normal">optional</span>
+              </label>
+              <span className="text-[11px] text-muted-foreground/40 tabular-nums">
+                {description.length}/200
+              </span>
+            </div>
+            <Textarea
+              id="description"
+              placeholder="What's this circle about?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={200}
+              rows={2}
+              className="rounded-xl resize-none text-sm"
             />
           </div>
 

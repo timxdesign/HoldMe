@@ -24,7 +24,7 @@ export default async function CirclesPage() {
     .order("joined_at", { ascending: false })
 
   const circles = (memberships ?? []).map((m) => ({
-    ...(m.circles as { id: string; name: string; emoji: string; created_by: string }),
+    ...(m.circles as { id: string; name: string; emoji: string | null; created_by: string }),
     role: m.role,
   }))
 

@@ -102,7 +102,7 @@ export default async function CircleGoalPage({ params }: CircleGoalPageProps) {
       <TopBar title={goal.title} showCreate={false} showBack />
       <CircleGoalDetail
         circleId={circleId}
-        circleEmoji={circle.emoji}
+        circleEmoji={circle.emoji ?? "🎯"}
         circleName={circle.name}
         goalId={goalId}
         title={goal.title}

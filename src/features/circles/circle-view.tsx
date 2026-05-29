@@ -6,6 +6,20 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { useConfetti } from "@/components/effects/confetti"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import {
   AddCircle,
@@ -14,23 +28,24 @@ import {
   CheckCircle,
   Copy,
   Heart,
+  InfoCircle,
   Link as LinkIcon,
+  MenuDots,
   Restart,
-  Target,
-  UserPlus,
+  Share,
   TrashBinTrash,
   Record,
 } from "@solar-icons/react"
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
-import { cn } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface CircleViewProps {
   circle: {
     id: string
     name: string
-    emoji: string
+    emoji: string | null
+    image_url: string | null
     created_by: string
   }
   goals: {
@@ -101,12 +116,13 @@ export function CircleView({
   const [justChecked, setJustChecked] = useState<Set<string>>(new Set())
   const [confirmDeleteGoalId, setConfirmDeleteGoalId] = useState<string | null>(null)
   const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null)
-  const [showInvite, setShowInvite] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
   const [inviteLink, setInviteLink] = useState("")
+  const [generatingLink, setGeneratingLink] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [sendingNudge, setSendingNudge] = useState(false)
   const fireConfetti = useConfetti()
   const checkinBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
-  const [copied, setCopied] = useState(false)
-  const [generatingLink, setGeneratingLink] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -169,6 +185,45 @@ export function CircleView({
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function handleNudgeInactive() {
+    setSendingNudge(true)
+
+    const todayCheckins = checkins.filter((c) => {
+      const checkinDate = new Date(c.checked_in_at)
+      const today = new Date()
+      return checkinDate.toDateString() === today.toDateString()
+    })
+    const checkedInUserIds = new Set(todayCheckins.map((c) => c.user_id))
+    const inactiveMembers = members.filter(
+      (m) => !checkedInUserIds.has(m.user_id) && m.user_id !== currentUserId
+    )
+
+    if (inactiveMembers.length === 0) {
+      toast.success("Everyone has checked in today!")
+      setSendingNudge(false)
+      return
+    }
+
+    const firstActiveGoal = activeGoals[0]
+    if (!firstActiveGoal) {
+      toast.error("No active goals to nudge about")
+      setSendingNudge(false)
+      return
+    }
+
+    const { error } = await supabase.from("circle_strengths").insert(
+      inactiveMembers.map((m) => ({
+        goal_id: firstActiveGoal.id,
+        sender_id: currentUserId,
+        message: "You got this! Don't forget to check in today 💪",
+      }))
+    )
+
+    setSendingNudge(false)
+    if (error) { toast.error("Failed to send"); return }
+    toast.success(`Sent encouragement to ${inactiveMembers.length} member${inactiveMembers.length !== 1 ? "s" : ""}!`)
+  }
+
   const goalCheckinMap: Record<string, typeof checkins> = {}
   for (const c of checkins) {
     if (!goalCheckinMap[c.goal_id]) goalCheckinMap[c.goal_id] = []
@@ -179,55 +234,62 @@ export function CircleView({
     <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-muted/60 text-xl">
-          {circle.emoji}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight truncate">{circle.name}</h1>
-          <p className="text-xs text-muted-foreground/60">
-            {members.length} member{members.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        {isOwner && (
-          <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={() => setShowInvite(!showInvite)}>
-            <UserPlus className="h-3.5 w-3.5" />
-            Invite
-          </Button>
-        )}
-      </div>
-
-      {/* Invite panel */}
-      {showInvite && (
-        <div className="rounded-xl bg-muted/40 ring-1 ring-foreground/[0.06] p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-          {!inviteLink ? (
-            <Button variant="outline" className="w-full gap-2" onClick={handleGenerateLink} disabled={generatingLink}>
-              {generatingLink ? <Restart className="h-4 w-4 animate-spin" /> : <LinkIcon className="h-4 w-4" />}
-              Generate invite link
-            </Button>
+        <button
+          onClick={() => router.push(`/circles/${circle.id}/info`)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left group/header rounded-xl p-1 -m-1 hover:bg-muted/30 transition-colors duration-150"
+        >
+          {circle.image_url ? (
+            <div className="h-12 w-12 rounded-xl overflow-hidden ring-1 ring-foreground/[0.06] shrink-0">
+              <img src={circle.image_url} alt="" className="h-full w-full object-cover" />
+            </div>
           ) : (
-            <div className="flex gap-2">
-              <Input value={inviteLink} readOnly className="text-xs h-9" />
-              <Button size="icon" variant="outline" onClick={handleCopy} className="h-9 w-9 shrink-0">
-                {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-muted/60 text-xl shrink-0">
+              {circle.emoji ?? "🎯"}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Members row */}
-      <div className="flex items-center gap-1.5">
-        {members.map((m) => (
-          <div
-            key={m.user_id}
-            className="h-8 w-8 rounded-full bg-gradient-to-br from-brand/60 to-purple-500/60 flex items-center justify-center ring-2 ring-background -ml-1 first:ml-0"
-            title={(m.users as { full_name: string | null } | null)?.full_name ?? "Member"}
-          >
-            <span className="text-[10px] font-bold text-white">
-              {((m.users as { full_name: string | null } | null)?.full_name ?? "?").charAt(0).toUpperCase()}
-            </span>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-semibold tracking-tight truncate group-hover/header:text-brand transition-colors">{circle.name}</h1>
+            <p className="text-xs text-muted-foreground/60">
+              {members.length} member{members.length !== 1 ? "s" : ""}
+            </p>
           </div>
-        ))}
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg hover:bg-muted/60 transition-colors" />
+            }
+          >
+            <MenuDots className="h-5 w-5 text-muted-foreground" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={4}>
+            <DropdownMenuItem
+              onClick={() => router.push(`/circles/${circle.id}/info`)}
+            >
+              <InfoCircle className="h-4 w-4" />
+              Circle Info
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setInviteLink("")
+                setCopied(false)
+                setShowShareDialog(true)
+              }}
+            >
+              <Share className="h-4 w-4" />
+              Share Circle
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleNudgeInactive}
+              disabled={sendingNudge}
+            >
+              <Heart className="h-4 w-4" />
+              {sendingNudge ? "Sending..." : "Send Strength"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Goals */}
@@ -378,6 +440,55 @@ export function CircleView({
         loading={deletingGoalId !== null}
         onConfirm={() => { if (confirmDeleteGoalId) handleDeleteGoal(confirmDeleteGoalId) }}
       />
+
+      {/* Share Circle Dialog */}
+      <Dialog
+        open={showShareDialog}
+        onOpenChange={(v) => {
+          setShowShareDialog(v)
+          if (!v) { setInviteLink(""); setCopied(false) }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share circle</DialogTitle>
+            <DialogDescription>Generate an invite link to share with others.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {!inviteLink ? (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={handleGenerateLink}
+                disabled={generatingLink}
+              >
+                {generatingLink ? (
+                  <Restart className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LinkIcon className="h-4 w-4" />
+                )}
+                Generate Invite Link
+              </Button>
+            ) : (
+              <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
+                <Input value={inviteLink} readOnly className="text-xs h-9" />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={handleCopy}
+                  className="h-9 w-9 shrink-0"
+                >
+                  {copied ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

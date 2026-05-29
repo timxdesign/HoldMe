@@ -16,7 +16,7 @@ function hasNewCircleComment(circleId: string, latestComment: string | undefined
 }
 
 interface CircleCardProps {
-  circle: { id: string; name: string; emoji: string; role: string }
+  circle: { id: string; name: string; emoji: string | null; role: string }
   memberCount: number
   goalCount: number
   latestComment?: string
@@ -40,7 +40,7 @@ export function CircleCard({ circle, memberCount, goalCount, latestComment }: Ci
       className="group flex items-center gap-3.5 rounded-xl ring-1 ring-foreground/[0.06] p-4 transition-all duration-200 hover:ring-foreground/15 hover:bg-muted/30"
     >
       <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-muted/50 text-lg shrink-0 transition-transform duration-300 group-hover:scale-105">
-        {circle.emoji}
+        {circle.emoji ?? "🎯"}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -50,11 +50,6 @@ export function CircleCard({ circle, memberCount, goalCount, latestComment }: Ci
           <h3 className="font-semibold text-[15px] truncate">
             {circle.name}
           </h3>
-          {circle.role === "owner" && (
-            <span className="shrink-0 text-[10px] font-semibold text-brand/70 bg-brand/8 rounded-full px-2 py-0.5">
-              Owner
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">

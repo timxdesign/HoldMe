@@ -17,7 +17,7 @@ export default async function CirclePage({ params }: CirclePageProps) {
 
   const [{ data: circle }, { data: goals }, { data: members }, { data: recentCheckins }] =
     await Promise.all([
-      supabase.from("circles").select("*").eq("id", id).single(),
+      supabase.from("circles").select("id, name, emoji, image_url, created_by").eq("id", id).single(),
       supabase
         .from("circle_goals")
         .select("*")
