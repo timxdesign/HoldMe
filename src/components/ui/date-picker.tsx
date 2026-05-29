@@ -80,7 +80,7 @@ export function DatePicker({ value, onChange, min, placeholder = "Pick a date", 
         <div
           ref={backdropRef}
           onClick={handleBackdropClick}
-          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] animate-in fade-in duration-150"
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center animate-in fade-in duration-150"
         >
           <div className="w-full max-w-[340px] mx-4 mb-4 sm:mb-0 rounded-2xl bg-card shadow-2xl ring-1 ring-foreground/10 p-4 animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
             {/* Month nav */}
