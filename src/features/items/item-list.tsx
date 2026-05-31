@@ -214,6 +214,8 @@ export function ItemList({ items, currentUserId, spaceStrengths = [], spaceId, m
       return
     }
 
+    window.dispatchEvent(new Event("goal-checked"))
+
     const btn = checkBtnRefs.current.get(itemId)
     if (btn) {
       const rect = btn.getBoundingClientRect()

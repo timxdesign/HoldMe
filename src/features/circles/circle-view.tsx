@@ -141,6 +141,8 @@ export function CircleView({
     setCheckingIn(null)
     if (error) { toast.error("Failed to check in"); return }
 
+    window.dispatchEvent(new Event("goal-checked"))
+
     const btn = checkinBtnRefs.current.get(goalId)
     if (btn) {
       const rect = btn.getBoundingClientRect()

@@ -11,11 +11,13 @@ function playNotificationSound(type?: string) {
       playCommentTone(ctx, t)
     } else if (type === "strength") {
       playStrengthTone(ctx, t)
+    } else if (type === "goal-checked") {
+      playGoalCheckedTone(ctx, t)
     } else {
       playDefaultTone(ctx, t)
     }
 
-    setTimeout(() => ctx.close(), 600)
+    setTimeout(() => ctx.close(), 800)
   } catch {
     playFallbackSound()
   }
@@ -86,6 +88,47 @@ function playStrengthTone(ctx: AudioContext, t: number) {
   shimmer.stop(t + 0.45)
 }
 
+function playGoalCheckedTone(ctx: AudioContext, t: number) {
+  const notes = [523.25, 659.25, 783.99, 1046.5]
+  notes.forEach((freq, i) => {
+    const offset = i * 0.07
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.type = "sine"
+    osc.frequency.setValueAtTime(freq, t + offset)
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.02, t + offset + 0.06)
+    gain.gain.setValueAtTime(0, t + offset)
+    gain.gain.linearRampToValueAtTime(0.18, t + offset + 0.012)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + offset + 0.22)
+    osc.connect(gain).connect(ctx.destination)
+    osc.start(t + offset)
+    osc.stop(t + offset + 0.22)
+  })
+
+  const sparkle = ctx.createOscillator()
+  const sparkleGain = ctx.createGain()
+  sparkle.type = "triangle"
+  sparkle.frequency.setValueAtTime(1568, t + 0.28)
+  sparkle.frequency.exponentialRampToValueAtTime(2093, t + 0.38)
+  sparkleGain.gain.setValueAtTime(0, t + 0.28)
+  sparkleGain.gain.linearRampToValueAtTime(0.07, t + 0.3)
+  sparkleGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5)
+  sparkle.connect(sparkleGain).connect(ctx.destination)
+  sparkle.start(t + 0.28)
+  sparkle.stop(t + 0.5)
+
+  const bass = ctx.createOscillator()
+  const bassGain = ctx.createGain()
+  bass.type = "sine"
+  bass.frequency.setValueAtTime(261.63, t)
+  bassGain.gain.setValueAtTime(0, t)
+  bassGain.gain.linearRampToValueAtTime(0.1, t + 0.02)
+  bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
+  bass.connect(bassGain).connect(ctx.destination)
+  bass.start(t)
+  bass.stop(t + 0.35)
+}
+
 function playDefaultTone(ctx: AudioContext, t: number) {
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
@@ -132,10 +175,12 @@ export function NotificationSound() {
   useEffect(() => {
     function handleComment() { play("comment") }
     function handleStrength() { play("strength") }
+    function handleGoalChecked() { play("goal-checked") }
     function handleNotification(e: CustomEvent) { play(e.detail?.type) }
 
     window.addEventListener("comment-received", handleComment)
     window.addEventListener("strength-received", handleStrength)
+    window.addEventListener("goal-checked", handleGoalChecked)
     window.addEventListener("notification-sound", handleNotification as EventListener)
 
     function handleSWMessage(e: MessageEvent) {
@@ -148,6 +193,7 @@ export function NotificationSound() {
     return () => {
       window.removeEventListener("comment-received", handleComment)
       window.removeEventListener("strength-received", handleStrength)
+      window.removeEventListener("goal-checked", handleGoalChecked)
       window.removeEventListener("notification-sound", handleNotification as EventListener)
       navigator.serviceWorker?.removeEventListener("message", handleSWMessage)
     }
